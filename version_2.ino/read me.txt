@@ -1,0 +1,106 @@
+Project Title
+Description
+This Arduino project demonstrates a contactless payment system using an RFID card reader (MFRC522) and a touchscreen display (Adafruit ST7735). The user interface prompts the user to scan an RFID card, input an amount, and completes the transaction. The system is built for an ESP32 microcontroller.
+
+Features
+Contactless Payment: Utilizes the MFRC522 RFID card reader to enable secure and convenient contactless payments.
+
+User Interface: Interactive interface on the ST7735 display guides the user through the payment process, displaying prompts and transaction details.
+
+Amount Input: Allows the user to input transaction amounts through an attached keypad.
+
+Backlight Control: Manages the display backlight to enhance user experience.
+
+Timeout Functionality: Implements a screen timeout feature to conserve power when the system is idle.
+
+Hardware Requirements
+ESP32 Microcontroller
+MFRC522 RFID Card Reader
+Adafruit ST7735 Touchscreen Display
+Keypad
+... (Specify any additional hardware)
+Wiring
+Ensure correct wiring of components. Refer to the defined pin mappings in the code.
+
+1. Libraries and Global Variables
+
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ST7735.h>
+#include <SPI.h>
+#include <MFRC522.h>
+#include <Wire.h>
+These lines include necessary libraries for GPS parsing (TinyGPS++), software serial communication (SoftwareSerial), graphics for the display (Adafruit_GFX), display control (Adafruit_ST7735), RFID card reading (MFRC522), and I2C communication (Wire).
+
+2. Pin Definitions
+
+#define TFT_CS   2
+#define TFT_RST  15
+#define TFT_DC   32
+#define TFT_MOSI 13
+#define TFT_SCLK 12
+
+#define SS_PIN   5
+#define RST_PIN  0
+#define BL_PIN   4
+Defines pin mappings for the ESP32 and connected peripherals like the touchscreen display and RFID reader.
+
+3. Global Variables
+
+float buttonTimer = 0;
+bool buttonPressed = false;
+String pressedCharacter = "";
+bool stringAdded = false;
+String amountString = "";
+
+unsigned long lastActivityTime = 0;
+bool screenActive = true;
+#define SCREEN_TIMEOUT 300000
+These variables are used for managing button presses, tracking the amount entered, and controlling the screen's timeout.
+
+4. Display and RFID Initialization
+
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+Initializes the display and RFID reader instances.
+
+5. Setup Function
+
+void setup() {
+  // ... (initialization of Serial, pins, display, RFID, etc.)
+}
+Initializes the system, including Serial communication, display, and RFID reader.
+
+6. Loop Function
+cpp
+
+void loop() {
+  // ... (displaying "SCAN TO PAY" and "Menu" on the screen)
+  checkcard(); // Waits for the user to scan a card
+}
+In the loop, it continuously displays "SCAN TO PAY" and "Menu" on the screen, and then calls the checkcard() function to wait for the user to scan an RFID card.
+
+7. RFID Card Checking
+
+void checkcard() {
+  // ... (initialize key, check for new card, read card UID, display processing message)
+  enterAmount(); // Calls the function for the user to input the amount
+  // ... (counter increment, stop card communication, etc.)
+}
+This function checks for a new RFID card, reads its UID, displays a processing message, calls enterAmount() for the user to input the amount, and performs other tasks.
+
+8. Keypad Reading
+
+void readKeyPad() {
+  // ... (read keypad button presses, set buttonPressed and pressedCharacter flags)
+}
+Reads the keypad for button presses and sets flags accordingly.
+
+9. Amount Input
+
+void enterAmount() {
+  // ... (display "Enter Amount" on the screen, read keypad, accumulate amountString)
+}
+
+Displays "Enter Amount" on the screen, reads the keypad to accumulate the entered amount, and displays it on the screen.
