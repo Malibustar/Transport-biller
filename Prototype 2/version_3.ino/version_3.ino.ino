@@ -42,6 +42,13 @@ String pressedCharacter = "";
 bool stringAdded = false;
 String amountString = "";
 
+String machineserial = ondigo000000000;
+
+
+ int batteryLevel, signalStrength;
+String deviceID, tfare, walletBal, admin;
+ String SERDEVICEID, RESPONSE;
+
 #define BL_PIN 9  // Backlight pin, adjust this according to your wiring
 #define SCREEN_GND_PIN 26  // Ground pin for screen
 #define RFID_GND_PIN 27  // Ground pin for RFID
@@ -65,7 +72,121 @@ MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 
+// Function to get radio signal strength and battery level
+void getSignalAndBattery(int &bat, int &sig) {
+  serial1.println("AT+CSQ"); // Send command to get radio signal strength
+  delay(10); // Wait for response
+  if (Serial1.available() > 0) {
+    sig = Serial1.parseInt(); // Read the signal strength value
+  }
 
+  serial1.println("AT+CBC"); // Send command to get battery level
+  delay(10); // Wait for response
+  if (Serial1.available() > 0) {
+    bat = Serial1.parseInt(); // Read the battery level value
+  }
+}
+
+// Function to return device menu/setting from server
+void recieveMessage(String& Device_ID, String& TFARE, String& WALLETBAL, String& ADMIN) {
+  String sub_message = "";
+
+  // Subscribe to MQTT topic
+  Serial1.println("AT+MQTTSUB=\"/public/TEST/makerfabs-B\",1,0", 1000, DEBUG);
+
+  // Wait for message to arrive
+  delay(1000); // Adjust delay as needed based on MQTT message arrival time
+
+  while (Serial1.available() > 0) {
+    char c = Serial1.read();
+    sub_message += c;
+  }
+
+  // Parse received JSON message
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, sub_message);
+
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  // Extract string values from JSON and assign them to provided references
+  Device_ID = doc["DEVICEID"].as<String>();
+  TFARE = doc["COLLECT_TFARE"].as<String>();
+  WALLETBAL = doc["WALLET_BALANCE"].as<String>();
+  ADMIN = doc["ADMIN_SET"].as<String>();
+
+  // Print extracted values for debugging
+  Serial.print("Device ID: ");
+  Serial.println(Device_ID);
+  Serial.print("Collect TFARE: ");
+  Serial.println(TFARE);
+  Serial.print("Wallet Balance: ");
+  Serial.println(WALLETBAL);
+  Serial.print("Admin Set: ");
+  Serial.println(ADMIN);
+}
+
+//This function is called whenever you want to request for payment 
+void sendMoney() {
+
+  AT+CGACT=1,1      // Active the PDP
+  delay (100);
+  // Serializing in JSON Format
+  DynamicJsonDocument doc(1024);
+
+  // Assigning values to JSON object
+  doc["MACHINEID"] = machineserial;
+  doc["CARDID"] = uID;
+  doc["AMOUNT"] = amountString;
+
+  // Serialize JSON object to string
+  String msg;
+  serializeJson(doc, msg);
+
+  // Publish JSON message to MQTT topic
+  String mqttTopic = "/public/TEST/makerfabs-W";
+  String mqttMessage = "AT+MQTTPUB=\"" + mqttTopic + "\",\"" + msg + "\",0,0,0";
+  sendData(mqttMessage, 1000, DEBUG);
+
+delay (500);
+
+  // Subscribe to MQTT topic
+  Serial1.println("AT+MQTTSUB=\"/public/TEST/makerfabs-B\",1,0", 1000, DEBUG);
+
+  // Wait for message to arrive
+  delay(1000); // Adjust delay as needed based on MQTT message arrival time
+
+  while (Serial1.available() > 0) {
+    char c = Serial1.read();
+    sub_message += c;
+  }
+
+  // Parse received JSON message
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, sub_message);
+
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  // Extract string values from JSON and assign them to provided references
+  SERDEVICEID = doc["DEVICEID"].as<String>();
+  RESPONSE = doc["SERVERRESPONSE"].as<String>();
+  
+
+  // Print extracted values for debugging
+  Serial.print("Device ID: ");
+  Serial.println(SERDEVICEID);
+  Serial.print("Collect TFARE: ");
+  Serial.println(RESPONSE);
+
+
+}
 
 void setup() {
   Serial.begin(115200);
@@ -77,7 +198,11 @@ void setup() {
   pinMode(BL_PIN, OUTPUT);
   pinMode(SCREEN_GND_PIN, OUTPUT);
   pinMode(RFID_GND_PIN, OUTPUT);
-  //digitalWrite(BL_PIN, HIGH);  // Turn on the backlight initially
+
+
+  digitalWrite(BL_PIN, HIGH);  // Turn on the backlight initially
+  digitalWrite(SCREEN_GND_PIN, LOW);  // Turn on the backlight initially
+  digitalWrite(RFID_GND_PIN, LOW);  // Turn on the backlight initially
 
   // Use this initializer if using a 1.8" TFT screen:
   tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
@@ -94,6 +219,27 @@ Serial.println(h);
 //expecting 128 x 160
  tft.setRotation(1); 
 
+    serial1.println("AT+CGATT=1", 3000); // Connect to the network
+    serial1.println("AT+CGDCONT=1,\"IP\",\"apn\"", 1000);    
+    serial1.println("AT+CGACT=1,1", 1000); //Activate the gprs (packet data protocal PDP)
+    delay(500);
+
+    serial1.println("AT+MQTTCONN=\"test.mosquitto.org\",1883,\"mqttx_0931852d34\",120,0", 1000);
+    delay(100);
+    serial1.println("AT+MQTTSUB=\"/public/TEST/makerfabs-B\",1,0", 1000);
+
+    
+    //sendData("AT+CIPSTART=\"TCP\",\"www.mirocast.com\",80", 2000, DEBUG);
+    serial1.println("AT+GPS=1",1000); //turn on GPS MODULE
+
+// Call the function to get battery level and signal strength
+  getSignalAndBattery(batteryLevel, signalStrength);
+  // Print the values obtained
+  Serial.print("Battery Level: ");
+  Serial.println(batteryLevel);
+  Serial.print("Signal Strength: ");
+  Serial.println(signalStrength);
+
 
   tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(0, 57); 
@@ -102,23 +248,12 @@ Serial.println(h);
   tft.print("Booting..."); // display "scan now" on device screen
   Serial.println("Booting..."); 
 
-//AT + CSQ // get radio signal strength
-//AT + CBC //get battery charge leve and battery charging status
 
- serial.write("AT+CGATT=1", 3000); // Connect to the network
-    serial.write("AT+CGDCONT=1,\"IP\",\"apn\"", 1000);    
-    serial.write("AT+CGACT=1,1", 1000);
-    delay(500);
+recieveMessage(deviceID, tfare, walletBal, admin);
+// Now deviceID, tfare, walletBal, and admin variables hold the parsed string values
 
 
-
-    serial.write("AT+MQTTCONN=\"test.mosquitto.org\",1883,\"mqttx_0931852d34\",120,0", 1000);
-    delay(100);
-    sendData("AT+MQTTSUB=\"/public/TEST/makerfabs-B\",1,0", 1000);
-    
-    //sendData("AT+CIPSTART=\"TCP\",\"www.mirocast.com\",80", 2000, DEBUG);
-    serial.write("AT+GPS=1",3000); //turn on GPS MODULE
-    serial.write("AT+GPSRD=0", 1000); //stop sending GPS data
+ serial.write("AT+GPSRD=0", 1000); //stop sending GPS data
    // serial.write("AT+GPS=0");
 
 Serial1.println("AT+GPSLP = 2") //GPS Low power
@@ -126,30 +261,23 @@ Serial1.println("AT+GPSLP = 2") //GPS Low power
 
 SerialMon.println("Wait...");
 
-
-
   SPI.begin();                // Init SPI bus
   mfrc522.PCD_Init();        // Init MFRC522 card
   // Enhance the MFRC522 Receiver Gain to maximum value of some 48 dB
   mfrc522.PCD_SetRegisterBitMask(mfrc522.RFCfgReg, (0x07 << 4));
   //Serial.println("Scan a MIFARE Classic PICC to demonstrate Value Blocks.");
 
-tft.fillScreen(ST77XX_BLACK);
-  tft.setCursor(15, 0); 
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(1);
-  tft.print("Signal strength " ) + serial.write("AT + CSQ")"%" ); // display "menu" on device screen
-  // Serial.println(modem.getSignalQuality() );
-
 delay(1000);
 }
 //end of void setup
 void loop() {
   
-// checkNetwork();
+uID = 0;
+amountString = 0;
 
+enterAmount(); // calls enter amount function for user to input amount
 
-
+  tft.fillScreen(ST77XX_BLACK);
   tft.setCursor(20, 50); 
   tft.setTextColor(ST77XX_WHITE);
   tft.setTextSize(3);
@@ -165,14 +293,9 @@ void loop() {
   tft.setTextColor(ST77XX_WHITE);
   tft.setTextSize(1);
   tft.print("Menu"); // display "menu" on device screen
+
  
-/*
-   tft.setCursor(5, 0); 
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(1);
-  tft.print("Signal strength " + String(modem.getSignalQuality()) + "%" ); // display "menu" on device screen
-  // Serial.println(modem.getSignalQuality() );
-*/
+checkcard(); //This function checks if a card was scanned
 
 //if (checkcard()==true && checkNetwork()==true) {
 if (checkcard()==true) {
@@ -181,6 +304,10 @@ tft.setCursor(0, 57);
 tft.setTextColor(ST77XX_WHITE);
 tft.setTextSize(1);
 tft.print("Processing payment.."); // display processing on device screen
+
+
+sendMoney(); //This function is called whenever you want to request for payment 
+
 tft.fillScreen(ST77XX_BLACK);
 tft.setCursor(0, 57); 
 tft.setTextColor(ST77XX_WHITE);
@@ -240,18 +367,14 @@ bool checkcard()
   uID = valA + valB + valC + valD;
   Serial.print(uID); //Display card UID
 
-  digitalWrite(BL_PIN, HIGH);
 tft.fillScreen(ST77XX_BLACK);
 tft.setCursor(0, 57); 
 tft.setTextColor(ST77XX_WHITE);
 tft.setTextSize(2);
 tft.print("Processing...."); // display processing on device screen
 delay(500);
-digitalWrite(BL_PIN, LOW);
 tft.fillScreen(ST77XX_BLACK);
 Serial.println();
-
-enterAmount(); // calls enter amount function for user to input amount
 
   
   counter = counter + 1;
