@@ -1,0 +1,56 @@
+- Device boot
+        publish to topic (projx/outbound)
+        Send - machine ID
+        Subscribe to topic (projx/inbound)
+        return - Device menu table
+
+
+
+- User initites payment
+publish to topic (projx/outbound)
+        Send - UID, amount, machine ID
+Subscribe to topic (projx/inbound)
+        return - 1, machine ID - Successful
+                 2, machine ID - Insufficient fund
+                 3, machine ID - Invalid User
+
+publich to topic (projx/outbound)
+        Send - UID, Pin, amount, machine ID
+Subscribe to topic (projx/inbound)
+        return - 1, machine ID - Successful
+                 2, machine ID - Insufficient fund
+                 3, machine ID - Invalid User
+
+
+
+void sendMessage()
+{
+  // Serializing in JSON Format
+  DynamicJsonDocument doc(1024);
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
+  doc["TEMP"] = t;
+  doc["HUM"] = h;
+  String msg ;
+  serializeJson(doc, msg);
+  mesh.sendBroadcast( msg );
+  Serial.println(msg);
+  taskSendMessage.setInterval((TASK_SECOND * 10));
+}
+
+void recieveMessage()
+{
+ String json;
+  DynamicJsonDocument doc(1024);
+  json = msg.c_str();
+  DeserializationError error = deserializeJson(doc, json);
+
+  if (error)
+  {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+  }
+
+  relay1_status = doc["Relay1"];
+  digitalWrite(Relay1, relay1_status);
+}
