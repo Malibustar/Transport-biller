@@ -1,0 +1,45 @@
+AT+CIPSHUT
+
+SHUT OK
+
+OK
+AT+CIPMUX=0
+
+OK
+AT+CGATT=1
+
++CGATT:1
+
+OK
+AT+CSTT="web.gprs.mtnnigeria.net","",""
+
+OK
+AT+CIICR
+
+OK
+AT+CIFSR
+
+10.123.245.69
+
+OK
+
+AT+CIPSTART="TCP","broker.mqtt.cool",1883
+CONNECT OK
+
+OK
+
+
+
+AT+CIPSTART="TCP","broker.mqtt.cool",1883
+CONNECT OK
+
+OK
+AT+CIPSEND=38
+
+> AT+MQTTPUB="/franky",0,0,11,"Hello Franky!">
+
+OK
+
+AT+CIPSTART="TCP","broker.mqtt.cool",1883
+AT+MQTTCONN=frank,"broker.mqtt.cool",1883,0,"","",120,0,0,0
+AT+MQTTPUB="/franky",0,0,12,"Hello Franky!"
