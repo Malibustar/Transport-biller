@@ -1,187 +1,4 @@
 
-/*#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-int selected = 0;
-int entered = -1;
-
-void displaymenu(void) {
-
-  int down = digitalRead(3);
-  int up = digitalRead(2);
-  int enter = digitalRead(16);
-  int back = digitalRead(5);
-
-  if (up == LOW && down == LOW) {
-  };
-  if (up == LOW) {
-    selected = (selected + 1)  % 7; // Adjust 7 to the total number of menu items;
-    delay(200);
-  };
-  if (down == LOW) {
-    selected = (selected - 1 + 7) % 7; // Adjust 7 to the total number of menu items;
-    delay(200);
-  };
-  if (enter == LOW) {
-    entered = selected;
-  };
-  if (back == LOW) {
-    entered = -1;
-  };
-
-  }
-  const char *options[7] = {
-    " COLLECT FARE ",
-    " WALLET BALANCE ",
-    " WITHDRAW ",
-    " MESSAGES ",
-    " TEST CONNECTION ",
-    " ADMIN ",
-    " SETTINGS "
-  };
-
-  if (entered == -1) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("MENU"));
-    display.println("");
-    for (int i = 0; i < 7; i++) {
-      if (i == selected) {
-        display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-        display.println(options[i]);
-      } else if (i != selected) {
-        display.setTextColor(SSD1306_WHITE);
-        display.println(options[i]);
-      }
-    }
-  } 
-  
-  
-  else if (entered == 0) { 
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 1");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system");
-
-  } 
-  
-  
-  else if (entered == 1) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 2");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system :)");
-  }
-
-  else if (entered == 2) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 3");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system:)");
-
-  }
-  
-   else if (entered == 3) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 4");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system:)");
-
-  } 
-  
-  else if (entered == 4) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 5");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system:)");
-  } 
-  
-  else if (entered == 5) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 6");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system:)");
-  } 
-  
-  else if (entered == 6) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println(F("Dsn menu test"));
-    display.println("Menu option 7");
-    display.setTextColor(SSD1306_WHITE);
-    display.setTextSize(2);
-    display.println("Dsn Menu system:)");
-  }
-
-
-  display.display();
-}
-
-void setup() {
-  pinMode(2, INPUT_PULLUP);
-  pinMode(3, INPUT_PULLUP);
-  pinMode(16, INPUT_PULLUP);
-  pinMode(5, INPUT_PULLUP);
-
-  Serial.begin(9600);
-  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-    for (;;); // Don't proceed, loop forever
-  }
-  display.clearDisplay();
-  // Draw a single pixel in white
-  display.drawPixel(10, 10, SSD1306_WHITE);
-  display.display();
-  delay(2000); // Pause for 2 seconds
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  displaymenu();
-}
-*/
 
 
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -190,6 +7,11 @@ void loop() {
 #include <SPI.h>
 #include "Wire.h"
 #include "I2CKeyPad.h"
+
+#define COLOR_BACKGROUND  ST77XX_BLACK
+#define COLOR_TEXT        ST77XX_WHITE // White for high readability
+#define COLOR_HIGHLIGHT   ST77XX_BLUE  // Blue background for selected item
+#define COLOR_SELECTED    ST77XX_CYAN  // Cyan for header and highlighting lines
 
 const int num_items = 7;     // Number of menu items
 const int num_subitems = 4;  // Number of subitems for each item
@@ -283,47 +105,108 @@ const char* pages[num_items][num_subitems] = {
 };
 
 // Function to display the menu
-void displayMenu(bool Rerender) {
-  if (Rerender)
-      tft.fillScreen(ST77XX_BLACK);
-  tft.setTextSize(2);
-  tft.setCursor(10, 10);
+void displayMenu() {
+    tft.fillScreen(COLOR_BACKGROUND); // Clear the screen with the background color
 
-  // Display menu items
-  for (int i = 0; i < num_items; i++) {
-    if (i == selected_item) {
-      tft.setTextColor(ST77XX_WHITE);
-    } else {
-      tft.setTextColor(ST77XX_YELLOW);
+    // Set the text size and color for the header
+    tft.setTextSize(3); // Increase text size for the header
+    tft.setTextColor(COLOR_SELECTED); // Use a color that stands out for the header
+
+    // Set the cursor to the top of the screen and print the "Menu" title
+    tft.setCursor(10, 10); // Adjust cursor position as needed for the header
+    tft.println(F("Menu"));
+
+    // Draw a horizontal line under the header for visual separation
+    tft.drawFastHLine(0, 45, tft.width(), COLOR_SELECTED); // Adjust Y position to fit the larger header
+
+    // Set text size for menu items
+    tft.setTextSize(2); // Increased text size for menu items for better readability
+
+    for (int i = 0; i < num_items; i++) {
+        int y = 55 + i * 25; // Adjust Y position to start below the header, with increased spacing for larger text
+
+        // Highlight the background of the selected item
+        if (i == selected_item) {
+            // Ensure there is high contrast between the highlighted background and text
+            tft.fillRect(0, y, tft.width(), 24, COLOR_HIGHLIGHT); // Adjust height for the larger text
+            tft.setTextColor(COLOR_TEXT, COLOR_HIGHLIGHT); // White text on blue background
+        } else {
+            tft.setTextColor(COLOR_TEXT, COLOR_BACKGROUND); // Non-selected items
+        }
+
+        // Set cursor and print each menu item
+        tft.setCursor(10, y + 4); // Adjust cursor X position, Y adjusted for item spacing and font size
+        tft.println(menu_items[i]);
     }
-    tft.println(menu_items[i]);
-  }
 }
 
 // Function to display subitems for the selected menu item
 void displaySubitems() {
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextSize(2);
-  tft.setCursor(10, 10);
+    tft.fillScreen(COLOR_BACKGROUND); // Clear the screen with the background color
 
-  // Display subitems for the selected menu item
-  for (int i = 0; i < num_subitems; i++) {
-    if (i == selected_subitem) {
-      tft.setTextColor(ST77XX_WHITE);
-    } else {
-      tft.setTextColor(ST77XX_YELLOW);
+    // Set the text size and color for the submenu header
+    tft.setTextSize(3); // Increased text size for the header for better visibility
+    tft.setTextColor(COLOR_SELECTED); // Use the selected color for the header text
+
+    // Set the cursor to the top of the screen and print the "Sub-Menu" title
+    tft.setCursor(10, 10); // Adjust cursor position as needed
+    tft.println(F("Sub-Menu"));
+
+    // Draw a horizontal line under the header for visual separation
+    tft.drawFastHLine(0, 45, tft.width(), COLOR_SELECTED); // Adjust Y position to fit the larger header text
+
+    // Increase the text size for the submenu items
+    tft.setTextSize(2); // Larger text size for submenu items for readability
+
+    for (int i = 0; i < num_subitems; i++) {
+        int y = 55 + i * 25; // Adjust Y position for increased spacing due to larger text size
+
+        // Highlight the background of the selected submenu item for better visibility
+        if (i == selected_subitem) {
+            tft.fillRect(0, y, tft.width(), 24, COLOR_HIGHLIGHT); // Highlight background with a solid color
+            tft.setTextColor(COLOR_TEXT, COLOR_HIGHLIGHT); // Text color for selected item (high contrast)
+        } else {
+            tft.setTextColor(COLOR_TEXT, COLOR_BACKGROUND); // Non-selected items' text color
+        }
+
+        // Set cursor and print each submenu item
+        tft.setCursor(10, y + 4); // Adjust cursor X position, Y adjusted for item spacing and text size
+        tft.println(subitems[selected_item][i]);
     }
-    tft.println(subitems[selected_item][i]);
-  }
 }
 
 // Function to display the page for the selected subitem
 void displayPage() {
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextSize(2);
-  tft.setCursor(10, 50);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.println(pages[selected_item][selected_subitem]);
+    tft.fillScreen(COLOR_BACKGROUND); // Clear the screen with the background color
+
+    // Dynamic page title based on the selected submenu item
+    String pageTitle = pages[selected_item][selected_subitem];
+
+    // Set the text size and color for the page header
+    tft.setTextSize(3); // Increased text size for the header
+    tft.setTextColor(COLOR_SELECTED); // Use the selected color for the header text
+
+    // Set the cursor to the top of the screen and print the page title
+    tft.setCursor(10, 10); // Adjust cursor position as needed
+    tft.println(pageTitle);
+
+    // Draw a horizontal line under the header for visual separation
+    tft.drawFastHLine(0, 45, tft.width(), COLOR_SELECTED); // Adjust the Y position to fit the larger header text
+
+    // Set the text size for the page content
+    tft.setTextSize(2); // Text size for page content for readability
+
+    // Display the page content below the header
+    // Here, we're simply repeating the page title for demonstration,
+    // but you could expand this to show any content relevant to the page
+    int contentY = 55; // Y position to start the content, below the header
+    tft.setCursor(10, contentY);
+    tft.setTextColor(COLOR_TEXT); // Text color for content
+    tft.println(pageTitle); // For demonstration, repeat the title as content
+
+    // Optionally, add more page content here
+    // tft.setCursor(10, contentY + 25); // Adjust for next line of content
+    // tft.println("Additional content here");
 }
 
 // Function to handle scrolling up
@@ -334,10 +217,10 @@ void scrollUp() {
   if (!in_subitem_page) {
     if (selected_item > 0 && selected_subitem == 0) {
       selected_item--;
-      displayMenu(false);
+      displayMenu();
     } else if (selected_item <= 0 && selected_subitem == 0) {
     selected_item = num_items -1;
-    displayMenu(false);
+    displayMenu();
     }
   }
   else{
@@ -360,11 +243,11 @@ void scrollDown() {
     //main menu
     if (selected_item < num_items - 1 && selected_subitem == 0) {
       selected_item++;
-      displayMenu(false);
+      displayMenu();
     }
     else if (selected_item >= num_items -1 && selected_subitem == 0 ){
       selected_item = 0;
-        displayMenu(false);
+        displayMenu();
     } 
   }
   else{
@@ -414,7 +297,7 @@ void goBack() {
     // selected_item = 0;
     selected_subitem = 0;
     in_subitem_page = false;
-    displayMenu(true);
+    displayMenu();
   }
 }
 
@@ -441,7 +324,7 @@ void setup() {
 tft.fillScreen(ST77XX_BLACK);
   tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
 
-displayMenu(true); 
+displayMenu(); 
 }
 
 void loop(void) {
