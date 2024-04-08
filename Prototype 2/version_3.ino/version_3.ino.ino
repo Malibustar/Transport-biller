@@ -1,12 +1,14 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
 #include <MFRC522.h>
 #include <ArduinoJson.h>
 #include "Wire.h"
 #include "I2CKeyPad.h"
+
+
 
 void setup();
 void readKeyPad();
@@ -16,26 +18,36 @@ void RecieveMessage();
 bool checkcard();
 void sendmoney();
 
-// Your GPRS credentials, if any
-const char apn[] = "inernet.ng.airtel.com"; // APN (example: internet.vodafone.pt) use https://wiki.apnchanger.org
-const char gprsUser[] = "web";
-const char gprsPass[] = "web";
 
-
-// MQTT details
-const char* broker = "broker.hivemq.com";                    // Public IP address or domain name
-const char* mqttUsername = "REPLACE_WITH_YOUR_MQTT_USER";  // MQTT username
-const char* mqttPassword = "REPLACE_WITH_YOUR_MQTT_PASS";  // MQTT password
-
-const char* topicinbound = "projx/inbound";
-const char* topicoutbound = "projx/outbound";
-
-//Pin for ESP32
-  #define TFT_CS         2  //case select connect to pin 5
+#if defined(ARDUINO_FEATHER_ESP32) // Feather Huzzah32
+#define TFT_CS         2  //case select connect to pin 5
   #define TFT_RST        15 //reset connect to pin 15
-  #define TFT_DC         8 //AO connect to pin 32  (not sure that this is really used)  try pin 25
+  #define TFT_DC         32 //AO connect to pin 32  (not sure that this is really used)  try pin 25
   #define TFT_MOSI       13 //Data = SDA connect to pin 23
-  #define TFT_SCLK       14 //Clock = SCK connect to pin 18
+  #define TFT_SCLK       12 //Clock = SCK connect to pin 18
+  #define TFT_MISO       25 //Clock = SCK connect to pin 18
+
+#elif defined(ESP8266)
+#define TFT_CS         2  //case select connect to pin 5
+  #define TFT_RST        15 //reset connect to pin 15
+  #define TFT_DC         32 //AO connect to pin 32  (not sure that this is really used)  try pin 25
+  #define TFT_MOSI       13 //Data = SDA connect to pin 23
+  #define TFT_SCLK       12 //Clock = SCK connect to pin 18
+  #define TFT_MISO       25 //Clock = SCK connect to pin 18
+
+#else
+  // For the breakout board, you can use any 2 or 3 pins.
+  // These pins will also work for the 1.8" TFT shield.
+#define TFT_CS         2  //case select connect to pin 5
+  #define TFT_RST        15 //reset connect to pin 15
+  #define TFT_DC         32 //AO connect to pin 32  (not sure that this is really used)  try pin 25
+  #define TFT_MOSI       13 //Data = SDA connect to pin 23
+  #define TFT_SCLK       12 //Clock = SCK connect to pin 18
+  #define TFT_MISO       25 //Clock = SCK connect to pin 18
+
+#endif
+
+
 
 #define SS_PIN 5  
 #define RST_PIN 4
@@ -50,6 +62,8 @@ bool stringAdded = false;
 String amountString = "";
 String sub_message ="";
 
+
+
 String machineserial = "ondigo000000000";
 
 
@@ -57,37 +71,24 @@ String machineserial = "ondigo000000000";
 String deviceID, tfare, walletBal, admin;
  String SERDEVICEID, RESPONSE;
 
-#define BL_PIN 9  // Backlight pin, adjust this according to your wiring
+#define BL_PIN 33  // Backlight pin, adjust this according to your wiring
 #define SCREEN_GND_PIN 26  // Ground pin for screen
 #define RFID_GND_PIN 27  // Ground pin for RFID
 
 
-#define DEBUG true
-
-unsigned long lastActivityTime = 0;
-bool screenActive = true;
-#define SCREEN_TIMEOUT 300000 // 5 minutes in milliseconds
-
-
-const uint8_t KEYPAD_ADDRESS = 0x38;
-
-I2CKeyPad keyPad(KEYPAD_ADDRESS);
-
-uint32_t start, stop;
-uint32_t lastKeyPressed = 0;
 
 
 int first = 0;
 int counter = 0;
 String uID;
 
+int progress = 0;
 
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 SoftwareSerial serial1(0, 1); // RX, TX
 
-// For ST7735-based displays, we will use this call
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-
+// OR for the ST7789-based displays, we will use this call
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
 
 
@@ -136,4 +137,20 @@ sendMoney(); //This function is called whenever you want to request for payment
 
 
 
+}
+
+
+void drawBitmap(int16_t x, int16_t y,
+ const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color) {
+
+  int16_t i, j, byteWidth = (w + 7) / 8;
+  uint8_t byte;
+
+  for(j=0; j<h; j++) {
+    for(i=0; i<w; i++) {
+      if(i & 7) byte <<= 1;
+      else      byte   = pgm_read_byte(bitmap + j * byteWidth + i / 8);
+      if(byte & 0x80) tft.drawPixel(x+i, y+j, color);
+    }
+  }
 }

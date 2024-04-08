@@ -1,0 +1,80 @@
+void setup() {
+  // initialize both serial ports:
+  Serial.begin(115200);// For ESP32
+  Serial2.begin(115200); //For A9G
+
+
+
+}
+
+void loop()
+{
+  /*
+  // read from port 1, send to port 0:
+  if (Serial2.available()) {
+    int inByte = Serial2.read();
+    Serial.write(inByte);
+  }
+
+  // read from port 0, send to port 1:
+  if (Serial.available()) {
+    int inByte = Serial.read();
+    Serial2.write(inByte);
+  }
+  */
+
+  // Send the AT+CBC? command
+  Serial2.println("AT+CBC?");
+
+  // Wait for the response
+  delay(500);
+
+  // Check if there is any response available
+  if (Serial2.available()) {
+    // Read the response
+    String response = Serial2.readStringUntil('\n');
+    Serial.println("Response: " + response);
+
+    // Parse the response
+    int chargerState, batteryPercentage;
+    if (sscanf(response.c_str(), "+CBC: %d,%d", &chargerState, &batteryPercentage) == 2) {
+      // Print charging state
+      Serial.print("Charging state: ");
+      Serial.println(chargerState == 0 ? "Not Connected" : "Connected");
+
+      // Map battery percentage to 6 stages
+      int batteryStage = map(batteryPercentage, 0, 100, 0, 5);
+      Serial.print("Battery stage: ");
+      switch (batteryStage) {
+        case 0:
+          Serial.println("0-16%");
+          break;
+        case 1:
+          Serial.println("17-33%");
+          break;
+        case 2:
+          Serial.println("34-49%");
+          break;
+        case 3:
+          Serial.println("50-66%");
+          break;
+        case 4:
+          Serial.println("67-83%");
+          break;
+        case 5:
+          Serial.println("84-100%");
+          break;
+        default:
+          Serial.println("Unknown");
+      }
+    } else {
+      Serial.println("Failed to parse response.");
+    }
+  } else {
+    Serial.println("No response received.");
+  }
+
+
+  delay(1000);
+}
+

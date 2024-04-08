@@ -13,3 +13,8 @@ void getSignalAndBattery(int &bat, int &sig) {
     bat = serial1.parseInt(); // Read the battery level value
   }
 }
+
+
+
+
+

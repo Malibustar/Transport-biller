@@ -1,8 +1,9 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-#define SS_PIN 5
-#define RST_PIN 0
+#define SS_PIN 5  
+#define RST_PIN 4
+#define  RFID_GND_PIN 27
 
 
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
@@ -35,12 +36,12 @@ void loop() {
   }
   // Look for new cards
   if ( ! mfrc522.PICC_IsNewCardPresent()) {
-    return;
+    return false;
   }
 
   // Select one of the cards
   if ( ! mfrc522.PICC_ReadCardSerial()) {
-    return;
+    return false;
   }
   // Now a card is selected. The UID and SAK is in mfrc522.uid.
 
@@ -81,4 +82,5 @@ void loop() {
 
       first++;
   }
+return true;
 }
