@@ -9,15 +9,17 @@
 #include "I2CKeyPad.h"
 #include<String.h>
 
+void displayMenu();
+void displaySubitems();
+void displayPage();
+void goBack();
+void selectItem();
+void scrollDown();
+void scrollUp();
+void showmenu(void);
 
-/*
-void setup();
-void readKeyPad();
-void EnterAmount();
-void Getsignalandbattery();
-void RecieveMessage();
-bool checkcard();
-void sendmoney();*/
+
+
 #define BL_PIN 26
 #define LED 33
 #define Buzzer 14
@@ -212,9 +214,23 @@ tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
 tft.drawBitmap(48, 16, internet, 15, 16, ST77XX_WHITE);
 tft.drawBitmap(275, 13, battery_83, 24, 16, ST77XX_WHITE);
 
+if (buttonPressed == true && pressedCharacter == "A")
+  {
+    displayMenu();
+    while (true) {
+    showmenu() ;
+   if (buttonPressed == true && pressedCharacter == "B" ) { // Move to home page
+    tft.fillScreen(ST77XX_BLACK);
+    tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
+    break; // Exit the function
+      }
+    }
+  }
+
+
 readKeyPad(); //read the keypad
   
-  if (buttonPressed == true) //if a button was pressed...
+  if (buttonPressed == true&& pressedCharacter == "#") //if a button was pressed...
   {
   enterAmount();
   }
@@ -268,7 +284,7 @@ void drawBitmap(int16_t x, int16_t y,
   }
 }
 
-
+/*
 void getBatteryState(){
 tft.drawBitmap(275, 124, battery_17, 24, 16, ST77XX_WHITE);
 tft.drawBitmap(275, 104, battery_33, 24, 16, ST77XX_WHITE);
@@ -331,7 +347,7 @@ while (Serial2.available()) {
     Serial.println("No response received.");
   }
 }
-
+*/
 
 /*
 void sendmoney(){
