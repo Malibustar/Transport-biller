@@ -2,7 +2,7 @@
 #define COLOR_BACKGROUND  ST77XX_BLACK
 #define COLOR_TEXT        ST77XX_WHITE // White for high readability
 #define COLOR_HIGHLIGHT   ST77XX_BLUE  // Blue background for selected item
-#define COLOR_SELECTED    ST77XX_CYAN  // Cyan for header and highlighting lines
+#define COLOR_SELECTED    0xF5A0  // Cyan for header and highlighting lines
 
 const int num_items = 7;     // Number of menu items
 const int num_subitems = 4;  // Number of subitems for each item
@@ -18,22 +18,22 @@ const int screenHeight = 240; // Screen height
 
 // Menu items
 const char* menu_items[num_items] = {
-  "Item 1",
-  "Item 2",
-  "Item 3",
-  "Item 4",
-  "Item 5",
-  "Item 6",
-  "Item 7"
+  "1. Collect Fare",
+  "2. Wallet Balance",
+  "3. Withdraw",
+  "4. Messages",
+  "5. Test Connection",
+  "6. Admin",
+  "7. Settings"
 };
 
 // Subitems for each menu item
 const char* subitems[num_items][num_subitems] = {
-  {"Subitem 1-1", "Subitem 1-2", "Subitem 1-3", "Subitem 1-4"},
+  {"1. Fixed Fare", "2. Variable", "Subitem 1-3", "Subitem 1-4"},
   {"Subitem 2-1", "Subitem 2-2", "Subitem 2-3", "Subitem 2-4"},
   {"Subitem 3-1", "Subitem 3-2", "Subitem 3-3", "Subitem 3-4"},
   {"Subitem 4-1", "Subitem 4-2", "Subitem 4-3", "Subitem 4-4"},
-  {"Subitem 5-1", "Subitem 5-2", "Subitem 5-3", "Subitem 5-4"},
+  {"1. Recent Transactions", "2. Withdrawal log", "3. Pending Transactions", "4. Update software"},
   {"Subitem 6-1", "Subitem 6-2", "Subitem 6-3", "Subitem 6-4"},
   {"Subitem 7-1", "Subitem 7-2", "Subitem 7-3", "Subitem 7-4"}
 };
@@ -245,6 +245,7 @@ void goBack() {
     displayMenu();
   }
 }
+
 
 
 void showmenu(void) {

@@ -1,6 +1,6 @@
 //******* Pin Configurations *******//
 
-
+#include <Arduino.h>
 
 
 void setup() {

@@ -10,6 +10,9 @@ String MQTT_PORT = "1883";
 String MQTT_USERNAME = "";
 String MQTT_PASSWORD = "";
 
+String IPAddress = "3.120.58.229";
+String IPPort = "1883";
+
 
 //******************* SIM Paramaters *******************//
 
@@ -45,63 +48,70 @@ void setup()
   Serial2.begin(115200); //For A9G
   
 
-  msg = "";
+ /* msg = "";
   msg = sendData("AT+RST=1", 2000, DEBUG);
   while ( msg.indexOf("OK") == -1 ) {
     msg = sendData("AT+RST = 1", 2000, DEBUG);
     Serial.println("Trying");
   }
-
+*/
   Serial.println("Before Delay");
-  delay(15000);// Waiting For 15 Sec for Initialisation
+  delay(2000);// Waiting For 15 Sec for Initialisation
 
   Serial.println("After Delay");
 
-  msg = "";
-  msg = sendData("AT", 1000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+  //if (!attemptCommand("AT+MQTTDISCONN", 1000, 5, "OK")) return;
 
-  msg = "";
-  msg = sendData("AT+MQTTDISCONN", 1000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT+MQTTDISCONN", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+    if (!attemptCommand("AT+CGATT=1", 1000, 5, "OK")) return;
 
-  msg = "";
-  msg = sendData("AT+CGATT=1", 2000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT+CGATT=1", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+    if (!attemptCommand("AT+CGDCONT=1,\"IP\", \"CMNET\"", 1000, 2, "OK")) {
+      Serial.println("Something happened with IP - CMNET. Proceeding anyways");
+      
+      }
+  
 
-  msg = "";
-  msg = sendData("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 2000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+    if (!attemptCommand("AT+CGACT=1,1", 1000, 5, "OK")) return;
 
 
-  msg = "";
-  msg = sendData("AT+CGACT=1", 2000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT+CGACT=1", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+ // if (!attemptCommand("AT+CIPSTART=\"TCP\",\"" + IPAddress + "\"," + IPPort, 1000, 5, "OK")) return;
 
+ if (!attemptCommand("AT+MQTTDISCONN", 1000, 5, "OK")) return;
+if (!attemptCommand("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"mqttx_0931852d35\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 3000, 10, "OK")) return;
+ 
+  //AT+CIPSTART="TCP","3.120.58.229",1883
 
+  if (!sendMQTTPublishCommand("franky", "12345")) return;
+// if (!attemptCommand("AT", 1000, 5, "OK")) return;
+//   if (!attemptCommand("AT+MQTTDISCONN", 1000, 5, "OK")) return;
 
-  msg = "";
-  msg = sendData("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 3000, DEBUG);
-  while ( msg.indexOf("OK") == -1 ) {
-    msg = sendData("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+//  // Check if GPRS is attached, and only proceed to attach if it's not.
+//   String cgattResponse = sendData("AT+CGATT?", 2000, DEBUG);
+  
+//   if (cgattResponse.indexOf("+CGATT: 0") != -1) {
+//     if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) { 
+//       Serial.println("GPRS Attachment failed...");
+//       return;
+//      // return to stop return;
+//     }
+//   } else if (cgattResponse.indexOf("+CGATT: 1") == -1) {
+//     Serial.println("Unexpected GPRS attachment status. Proceeding");
+//   //  return;
+//   }
 
+//   // Check if the correct APN is already set, and set it if not.
+//   String cgdcontResponse = sendData("AT+CGDCONT?", 2000, DEBUG);
+  
+//   if (cgdcontResponse.indexOf("\"" + APN_NAME + "\"") == -1) {
+//     if (!attemptCommand("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 2000, 5, "OK")) {
+//       Serial.println("APN Configuration not configured. Proceeding...");
+//       }
+//   }
+
+//   if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) return;
+
+// //  if (!attemptCommand("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 3000, 1, "OK")) return;
+//   if (AttemptMQTTConnection(10)== "0") return;
+  
   // Now set up two tasks to run independently.
   xTaskCreatePinnedToCore(
     MQTT_Task
@@ -254,25 +264,96 @@ String sendData(String command, const int timeout, boolean debug)
   return temp;
 }
 
-
-
-void MQTT_ReConnect()
-{
-
-  String new_msg = "";
-  new_msg = sendData("AT+MQTTDISCONN", 2000, DEBUG);
-  while ( new_msg.indexOf("OK") == -1 ) {
-    new_msg = sendData("AT+MQTTDISCONN", 2000, DEBUG);
-    Serial.println("Trying");
+bool attemptCommand(String command, int timeout, int attempts, String successIndicator) {
+  for (int tryCount = 0; tryCount < attempts; tryCount++) {
+    String response = sendData(command, timeout, DEBUG);
+    if (response.indexOf(successIndicator) != -1) {
+      return true; // Success
+    }
+    delay(1000); // Wait a bit before retrying
   }
+  Serial.println("Failed to execute command: " + command);
+  return false; // Failed after all attempts
+}
+void MQTT_ReConnect() {
+    // Make sure the PDP context is active
+    if (sendData("AT+CGACT?", 2000, DEBUG).indexOf("+CGACT: 1,1") == -1) {
+        if (!attemptCommand("AT+CGACT=1,1", 10000, 5, "OK")) {
+            Serial.println("PDP context activation failed. Retrying...");
+            // Optionally, deactivate and reactivate PDP context here
+        }
+    }
+
+    // Retry MQTT connection
+    if (AttemptMQTTConnection(5)== "0") return;
+}
 
 
-  new_msg = "";
-  new_msg = sendData("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 3000, DEBUG);
-  while ( new_msg.indexOf("OK") == -1 ) {
-    new_msg = sendData("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 1000, DEBUG);
-    Serial.println("Trying");
-  }
+String AttemptMQTTConnection(int retry){
 
+    for (int attempts = 0; attempts < retry; attempts++) {
+        String mqttConnResponse = sendData("AT+MQTTCONN=\"broker.hivemq.com\",1883,\"ABCD\",120,0,\"\",\"\"", 10000, DEBUG);
+        if (mqttConnResponse.indexOf("OK") != -1) {
+            Serial.println("MQTT Connected Successfully.");
+            return "OK"; // Success, exit the retry loop
+        } else if (mqttConnResponse.indexOf("+CME ERROR: 50") != -1) {
+            Serial.println("Insufficient network service, retrying MQTT connection...");
+            delay(5000); // Wait before retrying to allow for network conditions to change
+        }
+    }
+    Serial.println("Failed to establish MQTT connection after multiple attempts.");
+    return "0";
+}
+bool sendMQTTPublishCommand(String topic, String message) {
+    // Initiate the send operation
+    Serial2.println("AT+CIPSEND");
+    unsigned long startTime = millis();
+    bool promptReceived = false;
 
+    // Wait for '>' prompt indicating the module is ready for data input
+    while (millis() - startTime < 5000) { // 5-second timeout
+        if (Serial2.available()) {
+            char c = Serial2.read();
+            if (c == '>') {
+                promptReceived = true;
+                break; // Exit the loop once the prompt is received
+            }
+        }
+    }
+
+    if (!promptReceived) {
+        Serial.println("Prompt not received for CIPSEND.");
+        return false; // Exit the function if prompt wasn't received
+    }
+
+    // Send the MQTT publish command followed by a termination sequence (CTRL+Z / 0x1A)
+    String pubCommand = "AT+MQTTPUB=\"" + topic + "\",\"" + message + "\",0,0,0";
+    Serial2.print(pubCommand); // Send the publish command
+    Serial2.write(0x1A); // CTRL+Z to terminate the send operation
+
+    // Wait and read the response
+    String response = "";
+    startTime = millis();
+    while (millis() - startTime < 10000) { // 10-second timeout for the response
+        while (Serial2.available()) {
+            char c = Serial2.read();
+            response += c;
+            if (response.indexOf("OK") != -1 || response.indexOf("ERROR") != -1) {
+                break; // Break the loop if "OK" or "ERROR" is found
+            }
+        }
+    }
+
+    // Log the full response for debugging
+    if(DEBUG) {
+        Serial.println(response);
+    }
+
+    // Check response for success or error
+    if (response.indexOf("OK") != -1) {
+        return true; // Data sent successfully
+    } else {
+        Serial.println("Data send failed or no confirmation received.");
+        return false; // Send operation failed or no clear response was received
+    }
 }

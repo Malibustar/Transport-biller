@@ -1,3 +1,4 @@
+#define DEBUG true
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_GFX.h>    // Core graphics library
@@ -66,7 +67,8 @@ String pressedCharacter = "";
 bool stringAdded = false;
 String amountString = "";
 String sub_message ="";
-
+unsigned long elapsedTime = 0;
+unsigned long previousMillis = 0;
 
 
  int febucheck;
@@ -76,15 +78,35 @@ String machineserial = "ondigo000000000";
 
 
  int batteryLevel, signalStrength;
-String deviceID, tfare, walletBal, admin;
- String SERDEVICEID, RESPONSE;
+String deviceID = "ondigo12345" ;
+String tfare, walletBal, admin;
+ String DEVICEID, RESPONSE;
 
 #define BL_PIN 33  // Backlight pin, adjust this according to your wiring
 #define SCREEN_GND_PIN 26  // Ground pin for screen
 #define RFID_GND_PIN 27  // Ground pin for RFID
 
+ //******************* MQTT Parameters *******************//
+
+String MQTT_BROKER = "broker.hivemq.com";
+String MQTT_PORT = "1883";
+String MQTT_USERNAME = "";
+String MQTT_PASSWORD = "";
 
 
+//******************* SIM Paramaters *******************//
+
+String SOS_NUM = "";
+String APN_NAME = "internet.ng.airtel.com";
+
+//******************* Necessary Variables *******************//
+
+String fromGSM = "";
+String res = "";
+char* response = " ";
+String link1;
+String link2;
+String msg;
 
 int first = 0;
 int counter = 0;
@@ -118,20 +140,31 @@ extern uint8_t  internet[];
 extern uint8_t location_icon[];
 
 void setup(void) {
+
+
+    pinMode(BL_PIN, OUTPUT);
+  pinMode(LED, OUTPUT);
+  pinMode(Buzzer, OUTPUT);
+  pinMode(RFID_GND_PIN, OUTPUT);
+  
+  delay(100);
+ digitalWrite(BL_PIN, HIGH);
+ digitalWrite(RFID_GND_PIN, HIGH);
+ digitalWrite(LED, HIGH); 
+
+ 
    Wire.begin();
   Wire.setClock(400000L);
   Serial.begin(115200);
   Serial2.begin(115200);
-  Serial.println("ILI9341 Test!"); 
+  SPI.begin();      // Init SPI bus
+  Serial.println("ILI9341 Test!");
+  mfrc522.PCD_Init();        // Init MFRC522 card 
 
-  pinMode(BL_PIN, OUTPUT);
-  pinMode(LED, OUTPUT);
-  pinMode(Buzzer, OUTPUT);
-  delay(100);
- digitalWrite(BL_PIN, HIGH);
- digitalWrite(LED, HIGH); 
- 
-  
+
+
+    //setupGPRS();
+
     // OR use this initializer (uncomment) if using a 2.0" 320x240 TFT:
   tft.init(240, 320);           // Init ST7789 320x240
 
@@ -156,114 +189,14 @@ tft.drawRect(71, 201, progress, 2, ST77XX_GREEN);
 
     delay(100);  //change the delay to change how fast the boot up screen changes 
   }
-
+*/
 
 
  tft.fillScreen(ST77XX_BLACK);
   tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-*/
+
+gettime = 0;
 }
-
-
-void loop() {
-  
-uID = "";
-amountString = "";
-
-
-
-//enterAmount(); // calls enter amount function for user to input amount
-
-if(gettime==0){
-  // Initialize time
-  setTimeFromGSM(); // Get time from GSM module
-   }
-
-if (gettime==1){
-nettime();
-
-}
-
-//tft.fillRoundRect(0, 56, 400, 48, 1, ST77XX_BLACK);
-//tft.setTextColor(ST77XX_BLACK);
-tft.setTextColor(0xFFFF);
-tft.setTextSize(6);
-tft.setTextWrap(false);
-tft.setCursor(70, 100);
-tft.print(hour + 1); 
-tft.setCursor(140, 100);
-tft.print(":"); 
-tft.setCursor(175, 100);
-tft.print(mint); 
-tft.setTextSize(2);
-tft.setTextWrap(false);
-tft.setCursor(90, 155);
-tft.print(day); //"13:03:2024"
-tft.setCursor(145, 155);
-tft.print(month);
-tft.setCursor(195, 155);
-tft.print(year);
-//tft.print(day + ":" + month +":"+ "20"+ year); //"13:03:2024"
-tft.setTextColor(0xEDC0);
-tft.setTextSize(3);
-tft.setCursor(124, 200);
-tft.print("Menu");
-tft.drawBitmap(79, 16,location_icon, 13, 16, ST77XX_WHITE);
-tft.drawBitmap(136, 54, go_logo, 51, 36, 0xF5A0);
-tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(48, 16, internet, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 13, battery_83, 24, 16, ST77XX_WHITE);
-
-if (buttonPressed == true && pressedCharacter == "A")
-  {
-    displayMenu();
-    while (true) {
-    showmenu() ;
-   if (buttonPressed == true && pressedCharacter == "B" ) { // Move to home page
-    tft.fillScreen(ST77XX_BLACK);
-    tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-    break; // Exit the function
-      }
-    }
-  }
-
-
-readKeyPad(); //read the keypad
-  
-  if (buttonPressed == true&& pressedCharacter == "#") //if a button was pressed...
-  {
-  enterAmount();
-  }
-
-//if (checkcard()==true && checkNetwork()==true) {
-if (checkcard()==true) {
-  String deviceinfo = amountString + "," + uID;
-tft.setCursor(0, 57); 
-tft.setTextColor(ST77XX_WHITE);
-tft.setTextSize(3);
-tft.print("Processing payment.."); // display processing on device screen
-}
-  
-/*
-  Serial.print("Year: ");
-  Serial.println(year);
-  Serial.print("Month: ");
-  Serial.println(month);
-  Serial.print("Day: ");
-  Serial.println(day);
-  Serial.print("Hour: ");
-  Serial.println(hour);
-  Serial.print("Minute: ");
-  Serial.println(minute);
-  Serial.print("Second: ");
-  Serial.println(second);
-  */
-
-
-
-}
-
-
 
 
 
@@ -284,104 +217,245 @@ void drawBitmap(int16_t x, int16_t y,
   }
 }
 
-/*
-void getBatteryState(){
-tft.drawBitmap(275, 124, battery_17, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 104, battery_33, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 82, battery_50, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 60, battery_67, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 38, battery_83, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 17, battery_full, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(275, 147, charger_connected, 24, 16, ST77XX_WHITE);
-tft.drawBitmap(19, 86, network_1_bar, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(19, 61, network_2_bars, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(19, 38, network_3_bars, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(19, 110, network_not_connected, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(48, 15, internet, 15, 16, ST77XX_WHITE);
-tft.drawBitmap(79, 14,location_icon, 13, 16, ST77XX_WHITE);
 
-while (Serial2.available()) {
-
-    Serial.write("AT+CBC?");
-    delay(100);
-     String response = Serial2.readStringUntil('\n');
-    Serial.println("Response: " + response);
-
-    // Parse the response
-    int chargerState, batteryPercentage;
-    if (sscanf(response.c_str(), "+CBC: %d,%d", &chargerState, &batteryPercentage) == 2) {
-      // Print charging state
-      Serial.print("Charging state: ");
-      Serial.println(chargerState == 0 ? "Connected" : "Not connected");
-
-      // Map battery percentage to 6 stages
-      int batteryStage = map(batteryPercentage, 0, 100, 0, 5);
-      Serial.print("Battery stage: ");
-      switch (batteryStage) {
-        case 0:
-          Serial.println("0-16%");
-          break;
-        case 1:
-          Serial.println("17-33%");
-          break;
-        case 2:
-          Serial.println("34-49%");
-          break;
-        case 3:
-          Serial.println("50-66%");
-          break;
-        case 4:
-          Serial.println("67-83%");
-          break;
-        case 5:
-          Serial.println("84-100%");
-          break;
-        default:
-          Serial.println("Unknown");
-      }
-    } else {
-      Serial.println("Failed to parse response.");
+void MQTT_ReConnect()
+{
+  
+    // Make sure the PDP context is active
+    if (sendData("AT+CGACT?", 2000, DEBUG).indexOf("+CGACT: 1,1") == -1) {
+        if (!attemptCommand("AT+CGACT=1,1", 10000, 5, "OK")) {
+            Serial.println("PDP context activation failed. Retrying...");
+            // Optionally, deactivate and reactivate PDP context here
+        }
     }
-  } else {
-    Serial.println("No response received.");
-  }
+
+    // Retry MQTT connection
+    for (int attempts = 0; attempts < 5; attempts++) {
+        String mqttConnResponse = sendData("AT+MQTTCONN=\"broker.hivemq.com\",1883,\"ABCD\",120,0,\"\",\"\"", 10000, DEBUG);
+        if (mqttConnResponse.indexOf("OK") != -1) {
+            Serial.println("MQTT Connected Successfully.");
+            return; // Success, exit the retry loop
+        } else if (mqttConnResponse.indexOf("+CME ERROR: 50") != -1) {
+            Serial.println("Insufficient network service, retrying MQTT connection...");
+            delay(5000); // Wait before retrying to allow for network conditions to change
+        }
+    }
+    Serial.println("Failed to establish MQTT connection after multiple attempts.");
 }
-*/
+
+
+bool attemptCommand(String command, int timeout, int attempts, String successIndicator) {
+  for (int tryCount = 0; tryCount < attempts; tryCount++) {
+    String response = sendData(command, timeout, DEBUG);
+    if (response.indexOf(successIndicator) != -1) {
+      return true; // Success
+    }
+    delay(1000); // Wait a bit before retrying
+  }
+  Serial.println("Failed to execute command: " + command);
+  return false; // Failed after all attempts
+}
+
+
+String sendData(String command, const int timeout, boolean debug)
+{
+  String temp = "";
+  Serial2.println(command);
+  delay(500);
+  long int time = millis();
+  while ( (time + timeout) > millis())
+  {
+    while (Serial2.available())
+    {
+      char c = Serial2.read();
+      temp += c;
+    }
+  }
+  if (debug)
+  {
+    Serial.print(temp);
+  }
+  return temp;
+}
+
+void setupGPRS() {
+    Serial.println("Starting GPRS setup...");
+
+    // Wait for network registration
+    if (!waitForNetworkRegistration()) return;
+
+    // Attempt soft reset
+    sendData("AT+CFUN=0", 5000, DEBUG);
+    delay(5000); // Wait 5 seconds
+    String response = sendData("AT+CFUN=1", 5000, DEBUG);
+    if (response.indexOf("OK") == -1) {
+        Serial.println("Reset failed: " + response);
+        return;
+    }
+    // Check SIM status
+    if (!checkSIMStatus()) return;
+
+    // Attach to GPRS
+    if (sendData("AT+CGATT=1", 10000, DEBUG).indexOf("OK") == -1) {
+        Serial.println("Failed to attach GPRS");
+        return;
+    }
+
+    // Define the PDP context
+    String sapbrCmd = "AT+SAPBR=3,1,\"Contype\",\"GPRS\"";
+    if (sendData(sapbrCmd, 5000, DEBUG).indexOf("OK") == -1) {
+        Serial.println("Failed to set Contype");
+        return;
+    }
+
+    sapbrCmd = "AT+SAPBR=3,1,\"APN\",\"" + String(APN_NAME) + "\"";
+    if (sendData(sapbrCmd, 5000, DEBUG).indexOf("OK") == -1) {
+        Serial.println("Failed to set APN");
+        return;
+    }
+
+    // Enable the bearer
+    if (sendData("AT+SAPBR=1,1", 10000, DEBUG).indexOf("OK") == -1) {
+        Serial.println("Failed to enable the bearer");
+        return;
+    }
+
+    // Query the bearer status
+    String bearerStatus = sendData("AT+SAPBR=2,1", 5000, DEBUG);
+    if (bearerStatus.indexOf("+SAPBR: 1,1") != -1) {
+        Serial.println("Bearer is now open: " + bearerStatus);
+    } else {
+        Serial.println("Failed to open bearer: " + bearerStatus);
+    }
+}
+
+
+
+bool checkSIMStatus() {
+    String cpinResponse = sendData("AT+CPIN?", 5000, DEBUG);
+    if (cpinResponse.indexOf("+CPIN: READY") != -1) {
+        Serial.println("SIM is ready.");
+        return true;
+    } else {
+        Serial.println("SIM not ready: " + cpinResponse);
+        return false;
+    }
+}
+
+bool waitForNetworkRegistration() {
+    Serial.println("Checking network registration...");
+    for (int i = 0; i < 10; i++) {
+        String regStatus = sendData("AT+CREG?", 5000, DEBUG);
+        if (regStatus.indexOf("+CREG: 1,1") != -1 || regStatus.indexOf("+CREG: 1,5") != -1) {
+            Serial.println("Network registered.");
+            return true;
+        } else if (regStatus.indexOf("+CREG: 1,0") != -1) {
+            Serial.println("Not registered, trying to register...");
+            // Optionally, force a re-registration attempt here
+            sendData("AT+CREG=1", 5000, DEBUG); // Enable network registration and make sure it's active
+            sendData("AT+CFUN=1,1", 5000, DEBUG); // Restart the modem
+        }
+        delay(5000); // Increase delay to allow more time for registration attempt
+    }
+    Serial.println("Failed to register on network after multiple attempts.");
+    return false;
+}
+void connectGPRS(){
+   if (!attemptCommand("AT", 1000, 5, "OK")) return;
+
+ String cgattResponse = sendData("AT+CGATT?", 2000, DEBUG);
+  
+  if (cgattResponse.indexOf("+CGATT: 0") != -1) {
+    if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) { 
+      Serial.println("GPRS Attachment failed...");
+      return;
+     // return to stop return;
+    }
+  } else if (cgattResponse.indexOf("+CGATT: 1") == -1) {
+    Serial.println("Unexpected GPRS attachment status. Proceeding");
+  //  return;
+  }
+
+  // Check if the correct APN is already set, and set it if not.
+  String cgdcontResponse = sendData("AT+CGDCONT?", 2000, DEBUG);
+  
+  if (cgdcontResponse.indexOf("\"" + APN_NAME + "\"") == -1) {
+    if (!attemptCommand("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 2000, 5, "OK")) {
+      Serial.println("APN Configuration not configured. Proceeding...");
+      }
+  }
+
+  if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) return;
+    
+  tft.drawBitmap(48, 15, internet, 15, 16, ST77XX_WHITE);
+
+}
+
+void MQTT_CONNECT()
+{
+
+  // if (!attemptCommand("AT", 1000, 5, "OK")) return;
+  connectGPRS();
+  if (!attemptCommand("AT+MQTTDISCONN", 1000, 5, "OK")) return;
+
+//  // Check if GPRS is attached, and only proceed to attach if it's not.
+//   String cgattResponse = sendData("AT+CGATT?", 2000, DEBUG);
+  
+//   if (cgattResponse.indexOf("+CGATT: 0") != -1) {
+//     if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) { 
+//       Serial.println("GPRS Attachment failed...");
+//       return;
+//      // return to stop return;
+//     }
+//   } else if (cgattResponse.indexOf("+CGATT: 1") == -1) {
+//     Serial.println("Unexpected GPRS attachment status. Proceeding");
+//   //  return;
+//   }
+
+//   // Check if the correct APN is already set, and set it if not.
+//   String cgdcontResponse = sendData("AT+CGDCONT?", 2000, DEBUG);
+  
+//   if (cgdcontResponse.indexOf("\"" + APN_NAME + "\"") == -1) {
+//     if (!attemptCommand("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 2000, 5, "OK")) {
+//       Serial.println("APN Configuration not configured. Proceeding...");
+//       }
+//   }
+
+//   if (!attemptCommand("AT+CGATT=1", 2000, 5, "OK")) return;
+ // tft.drawBitmap(48, 15, internet, 15, 16, ST77XX_WHITE);
+  if (!attemptCommand("AT+MQTTCONN=\"" + MQTT_BROKER + "\"," + MQTT_PORT + ",\"ABCD\",120,0,\"" + MQTT_USERNAME + "\",\"" + MQTT_PASSWORD + "\"", 3000, 10, "OK")) return;
+
+}
 
 /*
 void sendmoney(){
 
- while (Serial2.available()) {
+ 
+}
+*/
 
-    Serial.write("AT+CGATT=1");
+void refreshtimescreen(){
 
-delay (200);
+tft.setTextColor(ST77XX_BLACK);
+tft.setTextSize(6);
+tft.setTextWrap(false);
+tft.setCursor(70, 100);
+tft.print(hour + 1); 
+tft.setCursor(140, 100);
+tft.print(":"); 
+tft.setCursor(175, 100);
+tft.print(mint); 
+tft.setTextSize(2);
+tft.setTextWrap(false);
+tft.setCursor(90, 155);
+tft.print(day); //"13:03:2024"
+tft.setCursor(145, 155);
+tft.print(month);
+tft.setCursor(195, 155);
+tft.print(year);
 
-Serial.write("AT+CGDCONT=1,"IP","CMNET"");
-
-delay (200);
-
-Serial.write("AT+CGACT=1,1");
-
-delay (200);
-
-Serial.write("AT+CIPSTART=\"TCP\",\"18.185.72.169\",8259");
-
-
-delay (500);
-
-Serial.write("AT+CIPSEND");
-
-delay (200);
-
-Serial.write("/CONNECT|All Frank Project|Card reader project|Frank12|~\n");
-
-delay (500);
- }
 }
 
-*/
 void nettime(){
 
   Serial.print(hour);
@@ -477,12 +551,22 @@ void nettime(){
   }
 
   void setTimeFromGSM() {
-  while (Serial2.available()) {
+
+    while (Serial2.available()) {
     Serial2.println("AT+CCLK?");
     delay(1000); // Wait for response
     String response = Serial2.readStringUntil('\n');
     Serial.println("Received response: " + response);
+/*
+     String response = "";
+   
+// Send AT+CBC? command and wait for response
+     response = sendData("AT+CCLK?", 1000, DEBUG);
 
+  // Check if the response starts with "+CCLK:" and has the minimum required length
+    if (response.startsWith("AT+CCLK?") && response.length() > 18) {
+
+*/
     // Check if the response starts with "+CCLK:" and has the minimum required length
     if (response.startsWith("+CCLK:") && response.length() > 18) {
       // Extract date and time components manually
@@ -777,106 +861,376 @@ if (stringAdded) { // display amount pressed on device screen
    
   }
 
- if (pressedCharacter == "C" ) { // Delete on "C" press if string has characters
+ if (pressedCharacter == "C" ) { // clear field when "C" pressed
      tft.setTextColor(ST77XX_BLACK);
       tft.setCursor(115, 120);
      tft.print(amountString);
      amountString = "";
      
- 
-      }
+    }
       
-    // Check if the "C" key is pressed to exit the function
+    // Check if the "#" key is pressed to exit the function
     if (buttonPressed && pressedCharacter == "#") {
-      buttonPressed = false; // Reset buttonPressed to avoid immediate triggering
       Serial.println("Amount Entered");
       
-      checkcard();
+    //  if (checkCard()){
 
+      //delete
+ if (true){
+      uID = "193596173";
+      //delete
+      Serial.println(uID); // display processing on serial monitor
 
-tft.fillScreen(ST77XX_BLACK);
+      String paymentinfo = amountString + "," + uID;
+      //String payload = "{\"rfid\":\"" + uID + "\", \"amount\":\"" + amountString + "\"}";
+      tft.fillScreen(ST77XX_BLACK);
+      tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
+      tft.setCursor(0, 57); 
+      tft.setTextColor(ST77XX_WHITE);
+      tft.setTextSize(3);
+      tft.print("Processing payment.."); // display processing on device screen
+      Serial.print("payment info - "); Serial.print(paymentinfo); Serial.println("-");
+
+     connectGPRS(); 
+      sendDataToServer(uID, amountString);
+
+      // Send the data to the server via HTTP POST or MQTT Publish
+    // if (!sendHTTPPost(payload)) {
+    //     Serial.println("Failed to send data.");
+    // } else {
+    //     Serial.println("Data sent successfully.");
+    // }
+
+    /*  MQTT_CONNECT();
+
+      link1 = ("AT+MQTTPUB=\"ondigopayment\",\"" + paymentinfo + "\",0,0,0") ;
+      
+      Serial.print("Payment details -"); Serial.println(link1);
+
+      //Serial.print("For Serial Monitor-"); Serial.println(link1);
+
+      // Serial2.println(link1);
+      sendData(link1, 1000, DEBUG);
+
+      delay(2000);*/
+
+      Serial.println("payment Made");
+      }
+      
+
+  tft.fillScreen(ST77XX_BLACK);
 tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-tft.setCursor(70, 150); 
+tft.setCursor(0, 57); 
 tft.setTextColor(ST77XX_WHITE);
 tft.setTextSize(3);
-tft.print(uID); // display processing on device screen
+tft.print("Payment Successful.."); // display processing on device screen
+delay(3000);
 
-  //tft.fillScreen(ST77XX_BLACK);
-  //tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-      return; // Exit the function
-    }
+   break; // Exit the function
+  
+}
+
 
  if (pressedCharacter == "B" ) { // Delete on "C" press if string has characters
         amountString = "";
       tft.fillScreen(ST77XX_BLACK);
   tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-  return; // Exit the function
+  break; // Exit the function
       }
  
   }
 }
 
-bool checkcard()
-{
- // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
-  MFRC522::MIFARE_Key key;
-  for (byte i = 0; i < 6; i++) {
-    key.keyByte[i] = 0xFF;
-  }
-  // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
-    return false;
-  }
+void sendDataToServer(String rfid, String amount) {
 
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) {
-    return false;
-  }
-  // Now a card is selected. The UID and SAK is in mfrc522.uid.
+sendData("AT+SAPBR=3,1,\"Contype\",\"GPRS\"", 5000, true);
+sendData("AT+SAPBR=3,1,\"APN\",\"" + APN_NAME + "\"", 5000, true);
+sendData("AT+SAPBR=1,1", 5000, true);  
+sendData("AT+SAPBR=2,1", 5000, true);  
 
-  // Dump UID
-  //Serial.print("Card UID:");
+checkAndReconnectNetwork();
+    // Construct the payload
+    String payload = "{\"rfid\":\"" + rfid + "\", \"amount\":\"" 
+    + amount + "\", machineId\":\"" 
+    + deviceID + "\" }";
 
-
-
-  int val1 = (mfrc522.uid.uidByte[0]);
-  int val2 = (mfrc522.uid.uidByte[1]);
-  int val3 = (mfrc522.uid.uidByte[2]);
-  int val4 = (mfrc522.uid.uidByte[3]);
-
-  String valA = String(val1);
-  String valB = String(val2);
-  String valC = String(val3);
-  String valD = String(val4);
-  uID = valA + valB + valC + valD;
-  Serial.print(uID); //Display card UID
-
-;
-
-  counter = counter + 1;
-  Serial.print(counter);
-
-  //}
-
-  // Halt PICC
-  mfrc522.PICC_HaltA();
-
-  // Stop encryption on PCD
-  mfrc522.PCD_StopCrypto1();
-  if (counter > first)
-  { //delay ifs
-    // enable w5100 SPI
-
- 
-      first++;
-  }
-  return true;
-  
+    // Send the data to the server via HTTP POST or MQTT Publish
+    if (!sendHTTPPost(payload)) {
+        Serial.println("Failed to send data.");
+    } else {
+        Serial.println("Data sent successfully.");
+    }
+}
+void checkAndReconnectNetwork() {
+    String response = sendData("AT+CGATT?", 2000, DEBUG);
+    if (response.indexOf("+CGATT: 1") == -1) {
+        Serial.println("Not attached, attempting to attach...");
+        attemptCommand("AT+CGATT=1", 10000, 5, "OK");
+    }
+    response = sendData("AT+CGDCONT?", 2000, DEBUG);
+    if (response.indexOf("\"" + APN_NAME + "\"") == -1) {
+        Serial.println("Setting APN...");
+        attemptCommand("AT+CGDCONT=1,\"IP\",\"" + APN_NAME + "\"", 10000, 5, "OK");
+    }
 }
 
-void refreshtimescreen(){
+bool sendHTTPPost(String data) {
+    // Initialize HTTP service
+    sendData("AT+HTTPINIT", 5000, true);
+    sendData("AT+HTTPPARA=\"CID\",1", 5000, true);
+    sendData("AT+HTTPSSL=1", 5000, true); // Enable SSL, if supported
+  sendData("AT+HTTPPARA=\"URL\",\" https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m\"", 5000, true);
+    //sendData("AT+HTTPPARA=\"URL\",\"http://arduinopaymentbackend.onrender.com/transaction\"", 5000, true);
+    sendData("AT+HTTPPARA=\"CONTENT\",\"application/json\"", 5000, true); // Set content type as JSON
+    sendData("AT+HTTPDATA=" + String(data.length()) + ",10000", 5000, true); // Prepare to send the payload
+    delay(100); // Short delay before sending data
+    Serial2.println(data); // Send the JSON data
+    delay(100); // Short delay to ensure data is written
+    String httpResponse = sendData("AT+HTTPACTION=1", 15000, true); // Execute POST
 
-tft.setTextColor(ST77XX_BLACK);
+    // Parse HTTP response here
+    if (httpResponse.indexOf("200") > -1) {
+        String responseBody = sendData("AT+HTTPREAD", 5000, true); // Read response data
+        Serial.println("Server response: " + responseBody); // Log response
+        return true;
+    }
+    sendData("AT+HTTPTERM", 5000, true); // Terminate HTTP service
+    return false;
+}
+
+
+bool checkCard() {
+  MFRC522::MIFARE_Key key;
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;  // Standard key for MIFARE authentication
+  }
+
+  tft.fillScreen(ST77XX_BLACK); // Clear the screen
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(10, 10);
+  tft.println("Please present your card");
+
+  unsigned long startTime = millis();
+  while (true) {
+    // Check if a new card is present
+    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
+      Serial.println("Card detected!");
+
+      // Construct the card UID string
+      uID = "";
+      for (byte i = 0; i < mfrc522.uid.size; i++) {
+        uID += String(mfrc522.uid.uidByte[i], HEX);
+      }
+      uID.toUpperCase();
+
+      Serial.print("Card UID: ");
+      Serial.println(uID);
+
+      // Halt PICC and stop encryption on PCD
+      mfrc522.PICC_HaltA();
+      mfrc522.PCD_StopCrypto1();
+      return true;  // Card read successfully
+    }
+
+    // Check for timeout to prevent infinite looping
+    if (millis() - startTime > 10000) {  // 10 seconds timeout
+      Serial.println("Timeout waiting for card.");
+      tft.fillScreen(ST77XX_BLACK); // Clear the screen
+      tft.setCursor(10, 10);
+      tft.println("Timeout, try again.");
+      delay(2000); // Show message for 2 seconds
+      return false;
+    }
+
+    delay(50);  // Small delay to prevent busy looping
+  }
+}
+
+
+
+void getBatteryState(){
+/*
+tft.drawBitmap(275, 147, charger_connected, 24, 16, ST77XX_WHITE);
+tft.drawBitmap(19, 86, network_1_bar, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(19, 61, network_2_bars, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(19, 38, network_3_bars, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(19, 110, network_not_connected, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(48, 15, internet, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(79, 14,location_icon, 13, 16, ST77XX_WHITE);
+*/
+
+String response = "";
+static int prevChargerState = -1; // Store the previous state of chargerState, initialized to an invalid value
+
+
+// Send AT+CBC? command and wait for response
+ response = sendData("AT+CBC?", 1000, DEBUG);
+
+
+  // Check if the response starts with "+CCLK:" and has the minimum required length
+    if (response.startsWith("AT+CBC?") && response.length() > 6) {
+      // Extract battery components manually
+      int chargerState = response.substring(17, 18).toInt();
+      int batteryPercentage = response.substring(20, 23).toInt();;
+
+        // Parse the substring
+        Serial.print("Charging state: ");
+        Serial.println(chargerState == 1 ? "Connected" : "Not connected");
+
+       // Check if chargerState has changed before executing the if statement
+        if (chargerState != prevChargerState) {
+            // Update prevChargerState
+            prevChargerState = chargerState;
+
+        // Check chargerState value and draw bitmap accordingly
+        if (chargerState == 1) {
+          tft.drawBitmap(275, 13, battery_full, 24, 16, ST77XX_BLACK);
+          tft.drawBitmap(275, 13, charger_connected, 24, 16, ST77XX_BLACK);
+            tft.drawBitmap(275, 13, charger_connected, 24, 16, ST77XX_WHITE);
+        } 
+        
+        else {
+          tft.drawBitmap(275, 13, charger_connected, 24, 16, ST77XX_BLACK);
+          tft.drawBitmap(275, 13, battery_full, 24, 16, ST77XX_BLACK);
+            // Map battery percentage to 6 stages
+            int batteryStage = map(batteryPercentage, 0, 100, 0, 5);
+            Serial.print("Battery stage: ");
+            switch (batteryStage) {
+                case 0:
+                    Serial.println("0-16%");
+                    tft.drawBitmap(275, 13, battery_17, 24, 16, ST77XX_WHITE);
+                    break;
+                case 1:
+                    Serial.println("17-33%");
+                    tft.drawBitmap(275, 13, battery_33, 24, 16, ST77XX_WHITE);
+                    break;
+                case 2:
+                    Serial.println("34-49%");
+                    tft.drawBitmap(275, 13, battery_50, 24, 16, ST77XX_WHITE);
+                    break;
+                case 3:
+                    Serial.println("50-66%");
+                    tft.drawBitmap(275, 13, battery_67, 24, 16, ST77XX_WHITE);
+                    break;
+                case 4:
+                    Serial.println("67-83%");
+                    tft.drawBitmap(275, 13, battery_full, 24, 16, ST77XX_BLACK);
+                    tft.drawBitmap(275, 13, battery_83, 24, 16, ST77XX_WHITE);
+                    break;
+                case 5:
+                    Serial.println("84-100%");
+                    tft.drawBitmap(275, 17, battery_full, 24, 16, ST77XX_WHITE);
+                    break;
+                default:
+                    Serial.println("Unknown");
+            }
+        }
+        }
+    }
+     else {
+        Serial.println("Failed to parse response.");
+    }
+} 
+
+
+
+void getNetworkState(){
+
+   String response = "";
+   
+// Send AT+CBC? command and wait for response
+     response = sendData("AT+CSQ", 1000, DEBUG);
+
+
+  // Check if the response starts with "+CCLK:" and has the minimum required length
+    if (response.startsWith("AT+CSQ") && response.length() > 6) {
+
+      // Network components manually
+
+      String NetworkStrength = response.substring(16, 18);
+      String NetworkSNR = response.substring(19, 22);
+
+      Serial.println("NetworkStrength:" + NetworkStrength);
+      Serial.println("NetworkSNR:" + NetworkSNR);
+
+        // Convert NetworkStrength to an integer
+        int networkStrengthInt = NetworkStrength.toInt();
+Serial.println("NetworkStrengthint:" + networkStrengthInt);
+
+
+            // Print charging state
+            Serial.print("NetworkStrength: ");
+            Serial.println(networkStrengthInt <= 1 ? "network available" : "No network");
+
+
+    
+            // Check chargerState value and draw bitmap accordingly
+            if (networkStrengthInt <= 0) {
+              tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_BLACK);
+              tft.drawBitmap(19, 16, network_not_connected, 15, 16, ST77XX_BLACK);
+                tft.drawBitmap(19, 16, network_not_connected, 15, 16, ST77XX_WHITE);
+            } else {
+              tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_BLACK);
+              tft.drawBitmap(19, 16, network_not_connected, 15, 16, ST77XX_BLACK);
+
+              
+                // Map battery percentage to 6 stages
+                int networkStage = map(networkStrengthInt, 0, 100, 0, 5);
+                Serial.print("Network stage: ");
+                switch (networkStage) {
+                    case 0:
+                        Serial.println("0-16%");
+                        tft.drawBitmap(19, 16, network_1_bar, 15, 16, ST77XX_WHITE);
+                        break;
+                    case 1:
+                        Serial.println("17-33%");
+                        tft.drawBitmap(19, 16, network_2_bars, 15, 16, ST77XX_WHITE);
+                        break;
+                    case 2:
+                        Serial.println("34-49%");
+                        tft.drawBitmap(19, 16, network_3_bars, 15, 16, ST77XX_WHITE);
+                        break;
+                    case 3:
+                        Serial.println("50-66%");
+                        tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
+                        break;
+          
+                    default:
+                        Serial.println("Unknown");
+                }
+            }
+        } else {
+            Serial.println("Failed to parse response.");
+        }
+    }
+ 
+
+
+
+void loop() {
+   
+uID = "";
+amountString = "";
+
+
+
+//enterAmount(); // calls enter amount function for user to input amount
+
+if(gettime==0){
+  // Initialize time
+  setTimeFromGSM(); // Get time from GSM module
+   }
+
+if (gettime==1){
+nettime();
+
+}
+
+//tft.fillRoundRect(0, 56, 400, 48, 1, ST77XX_BLACK);
+//tft.setTextColor(ST77XX_BLACK);
+tft.setTextColor(0xFFFF);
 tft.setTextSize(6);
 tft.setTextWrap(false);
 tft.setCursor(70, 100);
@@ -893,5 +1247,106 @@ tft.setCursor(145, 155);
 tft.print(month);
 tft.setCursor(195, 155);
 tft.print(year);
+//tft.print(day + ":" + month +":"+ "20"+ year); //"13:03:2024"
+tft.setTextColor(0xEDC0);
+tft.setTextSize(3);
+tft.setCursor(124, 200);
+tft.print("Menu");
+tft.drawBitmap(79, 16,location_icon, 13, 16, ST77XX_WHITE);
+tft.drawBitmap(136, 54, go_logo, 51, 36, 0xF5A0);
+//tft.drawBitmap(48, 16, internet, 15, 16, ST77XX_WHITE);
+getBatteryState();
+getNetworkState();
+
+tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
+tft.drawBitmap(275, 13, battery_83, 24, 16, ST77XX_WHITE);
+
+
+if (buttonPressed == true && pressedCharacter == "A")
+  {
+    displayMenu();
+    while (true) {
+    showmenu() ;
+   if (buttonPressed == true && pressedCharacter == "B" ) { // Move to home page
+    tft.fillScreen(ST77XX_BLACK);
+    tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
+    break; // Exit the function
+      }
+    }
+  }
+
+readKeyPad(); //read the keypad
+  
+  if (buttonPressed == true&& pressedCharacter == "#") //if a button was pressed...
+  {
+  enterAmount();
+  }
+
+
+  // Update elapsed time
+  elapsedTime += millis() - previousMillis;
+  previousMillis = millis();
+
+  // Check if 300 seconds (5 minutes) have elapsed
+  if (elapsedTime >= 300000) { // 300000 milliseconds = 300 seconds
+    Serial.println("reset network time");
+    gettime==0;
+    elapsedTime = 0; // Reset the timer
+  
+/*
+  Serial.print("Year: ");
+  Serial.println(year);
+  Serial.print("Month: ");
+  Serial.println(month);
+  Serial.print("Day: ");
+  Serial.println(day);
+  Serial.print("Hour: ");
+  Serial.println(hour);
+  Serial.print("Minute: ");
+  Serial.println(minute);
+  Serial.print("Second: ");
+  Serial.println(second);
+  */
+  }
 
 }
+
+/*
+void loop(){
+  
+  
+   if (true){
+      uID = "193596173";
+      //delete
+      Serial.println(uID); // display processing on serial monitor
+      String amountString = "100";
+     // String paymentinfo = amountString + "," + uID;
+      //String payload = "{\"rfid\":\"" + uID + "\", \"amount\":\"" + amountString + "\"}";
+      tft.fillScreen(ST77XX_BLACK);
+      tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
+      tft.setCursor(0, 57); 
+      tft.setTextColor(ST77XX_WHITE);
+      tft.setTextSize(3);
+      tft.print("Processing payment.."); // display processing on device screen
+    //  Serial.print("payment info - "); Serial.print(paymentinfo); Serial.println("-");
+
+     connectGPRS(); 
+      sendDataToServer(uID, amountString);
+
+      // Send the data to the server via HTTP POST or MQTT Publish
+    // if (!sendHTTPPost(payload)) {
+    //     Serial.println("Failed to send data.");
+    // } else {
+    //     Serial.println("Data sent successfully.");
+    // }
+
+  
+      Serial.println("payment Made");
+      }
+      else{
+              Serial.println("payment failed");
+      }
+
+
+}
+*/

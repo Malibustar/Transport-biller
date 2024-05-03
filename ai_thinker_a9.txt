@@ -62,6 +62,7 @@ AT+CGACT=1,1
 
 OK
 AT+CIPSTART="TCP","18.185.72.169",8259
+
 CONNECT OK
 
 OK
@@ -82,6 +83,20 @@ CLOSED
 
 OK
 AT+CIPSTART="TCP","18.185.72.169",8259
+
+AT+CIPSTART="TCP","3.120.58.229",1883
+
+AT+CIPSTART="TCP","18.198.222.5",1883
+
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttxss_0931852d35",120,0,"",""
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttx_0931852d35",120,0,"",""
+
+
+
+
+
+AT+CIPSEND
+
 CONNECT OK
 
 OK
@@ -89,6 +104,82 @@ OK
 
 AT+MQTTPUB="franky","12345",0,0,0
 +MQTTPUBLISH: 1, test, 6, 124563
+
+
+
+
+
+
+AT+CGATT=1
+
++CGATT:1
+
+OK
+AT+CGDCONT=1,"IP","CMNET"
+
+OK
+AT+CGACT=1,1
+
+OK
+
+AT+CGATT=1
+
++CGATT:1
+
+OK
+AT+CGDCONT=1,"IP","CMNET"
+
++CME ERROR: 3
+AT+CGACT=1,1
+
+OK
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttx_0931852d35",120,0"
+
++CME ERROR: 58
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttx_0931852d35",120,0"
+
++CME ERROR: 58
+AT+CIPSHUT
+
++CME ERROR: 50
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttx_0931852d35",120,0"
+
++CME ERROR: 58
+AT+MQTTCONN
+
++CME ERROR: 49
+AT+MQTTCONNAT+MQTTCONN="18.198.222.5",1883,"mqttx_0931852d35",120,0"
+
++CME ERROR: 58
+AT+MQTTCONN="broker.hivemq.com",1883,"mqttx_0931852d35",120,0,"",""
+
+OK
+AT+MQTTPUB="franky","12345",0,0,0
+
+OK
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
