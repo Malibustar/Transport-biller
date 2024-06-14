@@ -104,10 +104,9 @@ else {
 /////////////////////////////////////////////////////////////////////////////////
   // Serializing in JSON Format
   DynamicJsonDocument docc(1024);
-  docc["UID"] = "frankyjayde";
-  docc["amount"] = "500";
-  docc["machineId"] = "dres500";
-  String msg;
+  docc["username"] = "frankyjayde";
+  docc["password"] = "jcaabgth";
+  String msg ;
   serializeJson(docc, msg);
   Serial.println(msg);
 
@@ -115,7 +114,6 @@ else {
 if(WiFi.status()== WL_CONNECTED){
 
     http.begin(serverName); //Specify the URL
-    http.addHeader("Content-Type", "application/json");
 
  
 // Send the POST request
