@@ -621,7 +621,7 @@ void loop()
 #define TINY_GSM_MODEM_SIM800
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
-#define SerialMon Serial
+#define Serial Serial
 
 // or Software Serial on Uno, Nano
 

@@ -44,7 +44,7 @@
 
 #endif
 
-#define BL_PIN 26
+//#define BL_PIN 26
 #define LED 33
 
 // OR for the ST7789-based displays, we will use this call
@@ -73,10 +73,10 @@ void setup() {
   Serial.begin(115200);
   Serial.println("ILI9341 Test!"); 
 
-  pinMode(BL_PIN, OUTPUT);
+  //pinMode(BL_PIN, OUTPUT);
   pinMode(LED, OUTPUT);
   delay(100);
- digitalWrite(BL_PIN, HIGH);
+ //digitalWrite(BL_PIN, HIGH);
  digitalWrite(LED, HIGH); 
   
     // OR use this initializer (uncomment) if using a 2.0" 320x240 TFT:
