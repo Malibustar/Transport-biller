@@ -1,6 +1,6 @@
 #define DEBUG true
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
@@ -9,12 +9,12 @@
 #include "Wire.h"
 #include "I2CKeyPad.h"
 #include<String.h>
-#define DEBUG true
+
 
 #define TINY_GSM_MODEM_SIM800
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
-#define Serial Serial
+//#define SerialMon Serial
 
 // or Software Serial on Uno, Nano
 
@@ -45,37 +45,8 @@ const char* serverName = "ondigo.us-east-1.elasticbeanstalk.com";
 
 
 
-#include <TinyGsmClient.h>
-#include <ArduinoHttpClient.h>
-// Just in case someone defined the wrong thing..
-#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
-#undef TINY_GSM_USE_GPRS
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS false
-#define TINY_GSM_USE_WIFI true
-#endif
-#if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
-#undef TINY_GSM_USE_GPRS
-#undef TINY_GSM_USE_WIFI
-#define TINY_GSM_USE_GPRS true
-#define TINY_GSM_USE_WIFI false
-#endif
 
-#ifdef DUMP_AT_COMMANDS
-#include <StreamDebugger.h>
-StreamDebugger debugger(mySerial, Serial);
-TinyGsm        modem(debugger);
-#else
-TinyGsm        modem(mySerial);
-#endif
 
-TinyGsmClient client(modem);
-HttpClient   http(client, serverName, port);
-//const byte rxPin = 27;
-//const byte txPin = 26;
-  
-
-#include <Wire.h>
 
 void displayMenu();
 void displaySubitems();
@@ -101,7 +72,7 @@ void showmenu(void);
 #define SS_PIN 5  
 #define RST_PIN 4
 
-
+bool processPaymentFlag = false;
 long lastMsg = 0;
 int count = 0;
 float buttonTimer = 0;
@@ -145,7 +116,7 @@ int progress = 0;
 int gettime = 0;
 
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
-SoftwareSerial serial1(0, 1); // RX, TX
+//SoftwareSerial serial1(0, 1); // RX, TX
 
 // OR for the ST7789-based displays, we will use this call
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
@@ -168,25 +139,46 @@ extern uint8_t  network_not_connected[];
 extern uint8_t  internet[];
 extern uint8_t location_icon[];
 
-void setup(void) {
 
+#include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
+// Just in case someone defined the wrong thing..
+#if TINY_GSM_USE_GPRS && not defined TINY_GSM_MODEM_HAS_GPRS
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS false
+#define TINY_GSM_USE_WIFI true
+#endif
+#if TINY_GSM_USE_WIFI && not defined TINY_GSM_MODEM_HAS_WIFI
+#undef TINY_GSM_USE_GPRS
+#undef TINY_GSM_USE_WIFI
+#define TINY_GSM_USE_GPRS true
+#define TINY_GSM_USE_WIFI false
+#endif
 
+#ifdef DUMP_AT_COMMANDS
+#include <StreamDebugger.h>
+StreamDebugger debugger(mySerial, Serial);
+TinyGsm        modem(debugger);
+#else
+TinyGsm        modem(mySerial);
+#endif
+
+TinyGsmClient client(modem);
+HttpClient   http(client, serverName, port);
+//const byte rxPin = 27;
+//const byte txPin = 26;
   
-  pinMode(BL_PIN, OUTPUT);
-  pinMode(Buzzer, OUTPUT);
-  delay(100);
- digitalWrite(BL_PIN, HIGH); 
 
- 
-   Wire.begin();
-  Wire.setClock(400000L);
-  Serial.begin(115200);
-  Serial2.begin(115200);
-  SPI.begin();      // Init SPI bus
-  Serial.println("ILI9341 Test!");
-  mfrc522.PCD_Init();        // Init MFRC522 card 
-  
 
+#include <Wire.h>
+
+void setup() {
+
+delay(10);
+
+   Serial.begin(115200);
+  delay(10);
   // Set GSM module baud rate
   //TinyGsmAutoBaud(SerialAT, GSM_AUTOBAUD_MIN, GSM_AUTOBAUD_MAX);
    mySerial.begin(9600);
@@ -194,7 +186,7 @@ void setup(void) {
 
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
-  SerialMon.println("Initializing modem...");
+  Serial.println("Initializing modem...");
   modem.restart();
   // modem.init();
 
@@ -206,6 +198,21 @@ void setup(void) {
   // Unlock your SIM card with a PIN if needed
   if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
 #endif
+
+
+  
+  pinMode(BL_PIN, OUTPUT);
+  pinMode(Buzzer, OUTPUT);
+  delay(100);
+ digitalWrite(BL_PIN, HIGH); 
+
+
+ Wire.begin();
+  Wire.setClock(400000L);
+  //Serial2.begin(115200);
+  SPI.begin();      // Init SPI bus
+  Serial.println("ILI9341 Test!");
+  mfrc522.PCD_Init();        // Init MFRC522 card 
 
 
     //setupGPRS();
@@ -281,14 +288,14 @@ bool attemptCommand(String command, int timeout, int attempts, String successInd
 String sendData(String command, const int timeout, boolean debug)
 {
   String temp = "";
-  Serial2.println(command);
+  mySerial.println(command);
   delay(500);
   long int time = millis();
   while ( (time + timeout) > millis())
   {
-    while (Serial2.available())
+    while (mySerial.available())
     {
-      char c = Serial2.read();
+      char c = mySerial.read();
       temp += c;
     }
   }
@@ -431,10 +438,10 @@ void nettime(){
 
 void setTimeFromGSM() {
 
-    while (Serial2.available()) {
-    Serial2.println("AT+CCLK?");
+    while (mySerial.available()) {
+    mySerial.println("AT+CCLK?");
     delay(1000); // Wait for response
-    String response = Serial2.readStringUntil('\n');
+    String response = mySerial.readStringUntil('\n');
     Serial.println("Received response: " + response);
 /*
      String response = "";
@@ -705,122 +712,129 @@ void readKeyPad()
 }
 
 void enterAmount() {
- 
-tft.fillScreen(ST77XX_BLACK);
-tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
+  tft.fillScreen(ST77XX_BLACK);
+  tft.drawRect(0, 0, 320, 240, ST77XX_WHITE); // Draw white frame
   Serial.println("Input Amount:");
 
-tft.setTextColor(0xEDC0);
-tft.setTextSize(2);
-tft.setCursor(85, 70);
-tft.print("Enter Amount:");
-tft.setTextSize(3);
-tft.setCursor(124, 200);
-tft.print("Back");
+  tft.setTextColor(0xEDC0);
+  tft.setTextSize(2);
+  tft.setCursor(85, 70);
+  tft.print("Enter Amount:");
+  tft.setTextSize(3);
+  tft.setCursor(124, 200);
+  tft.print("Back");
 
   amountString = ""; // Clear the previous amount
 
   while (true) {
-
     readKeyPad(); // Continue reading keypad to capture amount input
 
-if (stringAdded) { // display amount pressed on device screen
-    stringAdded = false;
-    if (pressedCharacter != "#") {
-      amountString += pressedCharacter;
-      Serial.println("Enter Amount: " + amountString);
-       }
+    if (stringAdded) { // Display amount pressed on device screen
+      stringAdded = false;
+      if (pressedCharacter != "#") {
+        amountString += pressedCharacter;
+        Serial.println("Enter Amount: " + amountString);
+      }
 
-     tft.setTextColor(ST77XX_WHITE);
-     tft.setTextSize(4);
-     tft.setCursor(65, 120);
-     tft.print("N:");
+      tft.setTextColor(ST77XX_WHITE);
+      tft.setTextSize(4);
+      tft.setCursor(65, 120);
+      tft.print("N:");
       tft.setCursor(115, 120);
-     tft.print(amountString);
-   
-  }
-
- if (pressedCharacter == "C" ) { // clear field when "C" pressed
-     tft.setTextColor(ST77XX_BLACK);
-      tft.setCursor(115, 120);
-     tft.print(amountString);
-     amountString = "";
-     
+      tft.print(amountString);
     }
-      
+
+    if (pressedCharacter == "C") { // Clear field when "C" pressed
+      tft.setTextColor(ST77XX_BLACK);
+      tft.setCursor(115, 120);
+      tft.print(amountString);
+      amountString = "";
+    }
+
     // Check if the "#" key is pressed to exit the function
     if (buttonPressed && pressedCharacter == "#") {
       Serial.println("Amount Entered");
+      processPaymentFlag = true;
+      break; // Exit the loop and proceed to process payment
+    }
+
+    if (pressedCharacter == "B") { // On "B" press, go back
+      amountString = "";
+      tft.fillScreen(ST77XX_BLACK);
+      tft.drawRect(0, 0, 320, 240, ST77XX_WHITE); // Draw white frame
+      break; // Exit the function
+    }
+  }
+
+  if (processPaymentFlag) {
+    Processpayment();
+    processPaymentFlag = false; // Reset the flag after processing payment
+  }
+}
+
+void Processpayment() {
+    if (checkCard())  {
+      paymentinfo = amountString + "," + uID;
+      tft.fillScreen(ST77XX_BLACK);
+      tft.drawRect(0, 0, 320, 240, ST77XX_WHITE); // Draw white frame
+      tft.setCursor(0, 57);
+      tft.setTextColor(ST77XX_WHITE);
+      tft.setTextSize(3);
+      tft.print("Processing payment.."); // Display processing on device screen
+      Serial.print("payment info - ");
+      Serial.print(paymentinfo);
+      Serial.println("-");
+
+      // Serializing in JSON Format
+      DynamicJsonDocument docc(1024);
+      docc["UID"] = uID;
+      docc["amount"] = amountString;
+      docc["machineId"] = machineID;
+      serializeJson(docc, msg);
+      Serial.println(msg);
+
+      if (connectapnandinternet()) {
+            Paymentserverrequest();
+            Serial.println("Payment Successful.."); // Display successful serial monitor
+        } else {
+            Serial.println("Failed to connect to the internet. Returning to main loop.");
+        }
+
+        return; // Exit the function after processing payment
+    }
+
+    readKeyPad(); // Continue reading keypad to check for "B" press
+    if (pressedCharacter == "B") {
+      tft.fillScreen(ST77XX_BLACK);
+      tft.drawRect(0, 0, 320, 240, ST77XX_WHITE); // Draw white frame
+      Serial.println("Payment cancelled, going back to main loop");
+      return; // Exit the function if "B" is pressed
+    }
   
 }
 
+bool connectapnandinternet() {
+    const int maxRetries = 3;
+    int attempt = 0;
 
- if (pressedCharacter == "B" ) { // Delete on "C" press if string has characters
-        amountString = "";
-      tft.fillScreen(ST77XX_BLACK);
-  tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-  break; // Exit the function
-      }
- 
-  }
-}
+    while (attempt < maxRetries) {
+        Serial.print(F("Connecting to "));
+        Serial.print(apn);
+        if (modem.gprsConnect(apn, gprsUser, gprsPass)) {
+            Serial.println(" success");
+            if (modem.isGprsConnected()) {
+                Serial.println("GPRS connected");
+                return true;
+            }
+        } else {
+            Serial.println(" fail");
+        }
+        
+        attempt++;
+        delay(5000);
+    }
 
-void Processpayment(){
- if (checkCard()==true){
-
- //uID = "193596173";
-   
-     paymentinfo = amountString + "," + uID;
-      //String payload = "{\"rfid\":\"" + uID + "\", \"amount\":\"" + amountString + "\"}";
-      tft.fillScreen(ST77XX_BLACK);
-      tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-      tft.setCursor(0, 57); 
-      tft.setTextColor(ST77XX_WHITE);
-      tft.setTextSize(3);
-      tft.print("Processing payment.."); // display processing on device screen
-      Serial.print("payment info - "); Serial.print(paymentinfo); Serial.println("-");
-
-     // Serializing in JSON Format
-  DynamicJsonDocument docc(1024);
-  docc["UID"] = uID;
-  docc["amount"] = amountString;
-  docc["machineId"] = machineID;
-  serializeJson(docc, msg);
-  Serial.println(msg);
-
-  connectapnandinternet();
-  Paymentserverrequest();
-
-Serial.println("Payment Successful.."); // display successful serial monitor
-delay(3000);
-
-   break; // Exit the function
-      }
-      
-
-}
-
-void connectapnandinternet(){
-  // GPRS connection parameters are usually set after network registration
-  Serial.print(F("Connecting to "));
-  Serial.print(apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    Serial.println(" fail");
-  tft.fillScreen(ST77XX_BLACK);
-tft.drawRect(0,0,320,240,ST77XX_WHITE); //Draw white frame
-tft.setCursor(0, 57); 
-tft.setTextColor(ST77XX_WHITE);
-tft.setTextSize(3);
-tft.print("Connection failed.."); // display processing on device screen
-    delay(10000);
-    return;
-  }
-  Serial.println(" success");
-
-  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
-
-
-
+    return false;
 }
 
 
@@ -887,16 +901,18 @@ Serial.print(F("Performing HTTPS GET request... "));
 
 
 bool checkCard() {
+
+    tft.fillScreen(ST77XX_BLACK); // Clear the screen
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(10, 10);
+  tft.println("Please present your card");
+  Serial.println("Please present your card");
   MFRC522::MIFARE_Key key;
   for (byte i = 0; i < 6; i++) {
     key.keyByte[i] = 0xFF;  // Standard key for MIFARE authentication
   }
 
-  tft.fillScreen(ST77XX_BLACK); // Clear the screen
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(2);
-  tft.setCursor(10, 10);
-  tft.println("Please present your card");
 
   unsigned long startTime = millis();
   while (true) {
@@ -1016,6 +1032,7 @@ static int prevChargerState = -1; // Store the previous state of chargerState, i
     }
      else {
         Serial.println("Failed to parse response.");
+        return;
     }
 } 
 
@@ -1047,8 +1064,8 @@ tft.print("Menu");
 tft.drawBitmap(79, 16,location_icon, 13, 16, ST77XX_WHITE);
 tft.drawBitmap(136, 54, go_logo, 51, 36, 0xF5A0);
 //tft.drawBitmap(48, 16, internet, 15, 16, ST77XX_WHITE);
-getBatteryState();
-getNetworkState();
+//getBatteryState();
+//getNetworkState();
 
 tft.drawBitmap(19, 16, network_4_bars, 15, 16, ST77XX_WHITE);
 tft.drawBitmap(275, 13, battery_83, 24, 16, ST77XX_WHITE);
@@ -1138,10 +1155,12 @@ Serial.println("NetworkStrengthint:" + networkStrengthInt);
             }
         } else {
             Serial.println("Failed to parse response.");
+            return;
         }
     }
  
 void checktodisplaymenu(){
+
 if (buttonPressed == true && pressedCharacter == "A")
   {
     displayMenu();
@@ -1177,17 +1196,19 @@ void loop() {
 uID = "";
 amountString = "";
 
+readKeyPad(); 
 //check if the module has success
 checkiftimeisregistered();
 //display the home page of the device
+readKeyPad(); 
 drawhomepage();
+readKeyPad(); 
 //check if the menu button is pressed to display menu
 checktodisplaymenu();
 //read the keypad
 readKeyPad(); 
 //check if the # button is pressed to display amount screen
 checktodisplayamount();
-Processpayment();
   // Update elapsed time
   elapsedTime += millis() - previousMillis;
   previousMillis = millis();
@@ -1209,6 +1230,3 @@ Processpayment();
   Serial.println(second);
   */
   }
-
-
-
